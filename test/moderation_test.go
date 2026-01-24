@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	filereader "github.com/comerc/nsfw-mod/internal/file_reader"
-	"github.com/comerc/nsfw-mod/internal/moderation"
+	filereader "github.com/comerc/nsfw-mod/internal/repo/file_reader"
+	"github.com/comerc/nsfw-mod/internal/service/moderation"
 )
 
 func TestModerationService_Moderate_Success(t *testing.T) {
@@ -33,7 +33,7 @@ func TestModerationService_Moderate_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fileReader := &filereader.Service{}
+	fileReader := &filereader.Repo{}
 	service := moderation.New(tempDir, fileReader)
 	result := service.Moderate(testFile)
 
@@ -52,7 +52,7 @@ func TestModerationService_Moderate_Success(t *testing.T) {
 
 func TestModerationService_Moderate_FileNotFound(t *testing.T) {
 	tempDir := t.TempDir()
-	fileReader := &filereader.Service{}
+	fileReader := &filereader.Repo{}
 	service := moderation.New(tempDir, fileReader)
 
 	nonExistentFile := filepath.Join(tempDir, "nonexistent.png")
