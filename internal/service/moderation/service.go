@@ -1,27 +1,34 @@
 package moderation
 
+import (
+	"fmt"
+
+	"github.com/comerc/nsfw-mod/internal/repo/model_runner"
+)
+
 type FileReader interface {
-	Read(filePath string) error
+	Read(filePath string) ([]byte, error)
 }
 
 // Service implements Service
 type Service struct {
-	uploadDir  string
-	fileReader FileReader
+	uploadDir   string
+	fileReader  FileReader
+	modelRunner *modelrunner.Repo
 }
 
 // New creates a new instance of ModerationService
-func New(uploadDir string, fileReader FileReader) *Service {
+func New(uploadDir string, fileReader FileReader, modelRunner *modelrunner.Repo) *Service {
 	return &Service{
-		uploadDir:  uploadDir,
-		fileReader: fileReader,
+		uploadDir:   uploadDir,
+		fileReader:  fileReader,
+		modelRunner: modelRunner,
 	}
 }
 
 // Moderate analyzes the file with the given filePath for NSFW content
-// For now, this is a mock implementation that checks file extension
 func (s *Service) Moderate(filePath string) Result {
-	err := s.fileReader.Read(filePath)
+	imgData, err := s.fileReader.Read(filePath)
 
 	if err != nil {
 		return Result{
@@ -29,10 +36,24 @@ func (s *Service) Moderate(filePath string) Result {
 		}
 	}
 
-	// Mock result - in production, this would analyze the actual image
+	// Run inference via ModelRunner
+	nsfwProb, err := s.modelRunner.Infer(imgData)
+	if err != nil {
+		return Result{
+			Error: fmt.Sprintf("inference failed: %v", err),
+		}
+	}
+
+	// Decision threshold (configurable)
+	isNSFW := nsfwProb > 0.5
+	confidence := nsfwProb
+	if !isNSFW {
+		confidence = 1.0 - nsfwProb // confidence for "safe" class
+	}
+
 	return Result{
-		IsNSFW:     false, // Assume safe for demo
-		Confidence: 0.95,
+		IsNSFW:     isNSFW,
+		Confidence: confidence,
 		Categories: []string{},
 	}
 }
