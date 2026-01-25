@@ -1,6 +1,25 @@
 # nsfw-mod
 Moderation NSFW
 
+## Installation
+
+### ONNX Runtime
+
+The project uses ONNX Runtime for ML model inference. Install the ONNX Runtime shared library:
+
+- **macOS**:
+  ```bash
+  brew install onnxruntime
+  ```
+
+- **Other platforms**: See [ONNX Runtime installation guide](https://onnxruntime.ai/docs/install/).
+
+### Model
+
+Download an ONNX NSFW detection model and place it as `assets/model.onnx`. The model should accept input shape `[batch_size, 224, 224, 3]` (float32, normalized 0-1) and output shape `[batch_size, 1]` (float32, probability of NSFW).
+
+see: doc/models/OpenNSFW2.md
+
 ## TODO
 
 - [ ] Добавить Grafana MCP
@@ -17,7 +36,7 @@ Moderation NSFW
     }
 ```
 
-- исследование моделей NSFW
+- исследование моделей NSFW (хочу попробовать запустить каждую модель из перечисленных и замерить их производительность)
   - [ ] FaceONNX/NsfwONNX (на базе MobileNet или SqueezeNet) - быстрый фильтр "Yes/No", через OpenVINO
   - [ ] MobileNetV3
   - [ ] CLIP (LAION‑AI/CLIP‑based‑NSFW‑Detector) - Understands semantics & nuance.
