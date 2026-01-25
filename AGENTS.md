@@ -1,33 +1,22 @@
 # Instructions for AI Agents
 
-## Context & Rules
+## KiloCode Agent Config
 
-You must strictly follow the architectural and coding standards defined in the project. 
+### Standards & Rules
+Strictly follow standards in `./.kilocode/rules/`. Verify against rules before providing code.
 
-Key reference files:
+### Role Mapping
+Match behavior to KiloCode roles based on GitHub Copilot intent:
 
-- **Core Rules:** Refer to all files in `./.kilocode/rules/` for syntax and patterns.
+| Intent / Mode | KiloCode Role | Skill Path |
+| :--- | :--- | :--- |
+| /plan / Architecture | Architect | ./.kilocode/skills-architect/**/SKILL.md |
+| /edit / Code Gen | Code Specialist | ./.kilocode/skills-code/**/SKILL.md |
+| Chat / Error Debug | Debug Specialist | ./.kilocode/skills-debug/**/SKILL.md |
+| @workspace | Orchestrator | ./.kilocode/skills-orchestrator/**/SKILL.md |
 
-*Instruction for Agent:* When providing code, verify it against the rules in `.kilocode/rules` first.
+### Execution Protocol
+- Pre-read relevant SKILL.md and rules/*.md via @workspace automatically.
+- Do not ask for permission to read rules — just use them.
 
-## Role & Skill Mapping (KiloCode Compatibility)
-
-### Functional Mappings for Copilot:
-- **IF mode is PLAN or context is ARCHITECTURE:**
-  - Act as **Architect**.
-  - Reference Skills: `./.kilocode/skills-architect/**/SKILL.md`
-  
-- **IF mode is EDIT or generating CODE:**
-  - Act as **Code Specialist**.
-  - Reference Skills: `./.kilocode/skills-code/**/SKILL.md`
-  
-- **IF mode is CHAT (Ask) and user reports an ERROR:**
-  - Act as **Debug Specialist**.
-  - Reference Skills: `./.kilocode/skills-debug/**/SKILL.md`
-
-- **IF using `@workspace` (GitHub Copilot Workspace / Agent mode):**
-  - Act as **Orchestrator**.
-  - Reference Skills: `./.kilocode/skills-orchestrator/**/SKILL.md`
-
-### General Instruction:
-Always match your behavior to the corresponding KiloCode role based on the current Copilot intent (Plan/Edit/Ask/Agent).
+**Note: Rules & Skill files are optional; use them only if they exist.**
