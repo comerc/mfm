@@ -9,7 +9,7 @@ type MediaReader interface {
 }
 
 type ModelRunner interface {
-	Infer(data [][]byte) (bool, error)
+	Infer(data [][]byte) (bool, float32, error)
 }
 
 // Service implements Service
@@ -39,7 +39,7 @@ func (s *Service) Moderate(filePath string) Result {
 	}
 
 	// Run inference via ModelRunner
-	isNSFW, err := s.modelRunner.Infer(frames)
+	isNSFW, score, err := s.modelRunner.Infer(frames)
 	if err != nil {
 		return Result{
 			Error: fmt.Sprintf("inference failed: %v", err),
@@ -48,6 +48,7 @@ func (s *Service) Moderate(filePath string) Result {
 
 	return Result{
 		IsNSFW:     isNSFW,
+		Score:      score,
 		Categories: []string{},
 	}
 }
