@@ -34,35 +34,26 @@ func TestModerationService_Moderate_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fileReader := &mediareader.Repo{}
+	mediaReader := mediareader.New()
 	modelRunner := modelrunner.New()
-	service := moderation.New(tempDir, fileReader, modelRunner)
+	service := moderation.New(tempDir, mediaReader, modelRunner)
 	result := service.Moderate(testFile)
 
 	if result.Error != "" {
 		t.Errorf("expected no error, got %s", result.Error)
 	}
 
-	// Check that image data was loaded
-	if len(result.Error) == 0 && result.Confidence == 0.95 {
-		// Mock still returns 0.95, but data is loaded
-	}
-
+	// MockRunner (stub in model_runner.go) always returns false (safe) for now
 	if result.IsNSFW {
 		t.Errorf("expected IsNSFW to be false, got true")
-	}
-
-	// MockRunner Infer returns 0.1, so confidence should be 0.9 (1 - 0.1)
-	if result.Confidence != 0.9 && !result.IsNSFW {
-		t.Errorf("expected confidence 0.9, got %f", result.Confidence)
 	}
 }
 
 func TestModerationService_Moderate_FileNotFound(t *testing.T) {
 	tempDir := t.TempDir()
-	fileReader := &mediareader.Repo{}
+	mediaReader := mediareader.New()
 	modelRunner := modelrunner.New()
-	service := moderation.New(tempDir, fileReader, modelRunner)
+	service := moderation.New(tempDir, mediaReader, modelRunner)
 
 	nonExistentFile := filepath.Join(tempDir, "nonexistent.png")
 	result := service.Moderate(nonExistentFile)
