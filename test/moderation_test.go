@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	filereader "github.com/comerc/nsfw-mod/internal/repo/file_reader"
-	"github.com/comerc/nsfw-mod/internal/repo/model_runner"
+	mediareader "github.com/comerc/nsfw-mod/internal/repo/media_reader"
+	modelrunner "github.com/comerc/nsfw-mod/internal/repo/model_runner"
 	"github.com/comerc/nsfw-mod/internal/service/moderation"
 )
 
@@ -34,7 +34,7 @@ func TestModerationService_Moderate_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fileReader := &filereader.Repo{}
+	fileReader := &mediareader.Repo{}
 	modelRunner := modelrunner.New()
 	service := moderation.New(tempDir, fileReader, modelRunner)
 	result := service.Moderate(testFile)
@@ -60,7 +60,7 @@ func TestModerationService_Moderate_Success(t *testing.T) {
 
 func TestModerationService_Moderate_FileNotFound(t *testing.T) {
 	tempDir := t.TempDir()
-	fileReader := &filereader.Repo{}
+	fileReader := &mediareader.Repo{}
 	modelRunner := modelrunner.New()
 	service := moderation.New(tempDir, fileReader, modelRunner)
 
