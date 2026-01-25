@@ -10,7 +10,7 @@ import (
 
 type Repo struct{}
 
-func (s *Repo) Read(filePath string) ([]byte, error) {
+func (s *Repo) Read(filePath string) ([][]byte, error) {
 	// Check file first
 	if err := s.check(filePath); err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func (s *Repo) Read(filePath string) ([]byte, error) {
 		return nil, fmt.Errorf("error reading file: %w", err)
 	}
 
-	return data, nil
+	return [][]byte{data}, nil
 }
 
 // check performs initial validation without loading full file
@@ -53,8 +53,8 @@ func (s *Repo) check(filePath string) error {
 	// Detect content type
 	contentType := http.DetectContentType(buffer[:n])
 
-	// Check if it's an image type
-	if strings.HasPrefix(contentType, "image/") {
+	// Check if it's an image or video type
+	if strings.HasPrefix(contentType, "image/") || strings.HasPrefix(contentType, "video/") {
 		return nil
 	}
 
