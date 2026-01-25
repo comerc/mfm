@@ -30,7 +30,7 @@ func TestService_Read_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repo := New(nil)
+	repo := New()
 	frames, err := repo.Read(testFile)
 
 	if err != nil {
@@ -50,7 +50,7 @@ func TestService_Read_Success(t *testing.T) {
 
 func TestService_Read_FileNotFound(t *testing.T) {
 	tempDir := t.TempDir()
-	repo := New(nil)
+	repo := New()
 
 	nonExistentFile := filepath.Join(tempDir, "nonexistent.png")
 	_, err := repo.Read(nonExistentFile)
@@ -74,7 +74,7 @@ func TestService_Read_UnsupportedType(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repo := New(nil)
+	repo := New()
 	_, err = repo.Read(testFile)
 
 	if err == nil {
@@ -84,4 +84,9 @@ func TestService_Read_UnsupportedType(t *testing.T) {
 	if !strings.Contains(err.Error(), "unsupported file type") {
 		t.Errorf("expected 'unsupported file type' error, got %s", err.Error())
 	}
+}
+
+func TestService_Read_Video_Success(t *testing.T) {
+	// TODO: реализовать юнит-тест, а пока есть только интеграционный тест с реальным вызовом ffmpeg
+	// TODO: обернуть exec.Command("ffmpeg", ...) в Runner, чтобы инкапсулировать cmd.Start() & cmd.Wait() и замокать в тестах
 }
