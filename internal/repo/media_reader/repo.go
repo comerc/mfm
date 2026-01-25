@@ -13,7 +13,21 @@ import (
 	"strings"
 )
 
-type Repo struct{}
+// Runner defines the interface for running commands within this package
+type Runner interface {
+	Run(name string, arg ...string) *exec.Cmd
+}
+
+type Repo struct {
+	runner Runner
+}
+
+// New creates a new instance of MediaReader repository
+func New(runner Runner) *Repo {
+	return &Repo{
+		runner: runner,
+	}
+}
 
 func (s *Repo) Read(filePath string) ([][]byte, error) {
 	// Check file first
@@ -53,7 +67,7 @@ func (s *Repo) processVideo(filePath string) ([][]byte, error) {
 	// -f rawvideo: output format raw video
 	// -pix_fmt rgb24: pixel format RGB 24-bit
 	// pipe:1: output to stdout
-	cmd := exec.Command("ffmpeg",
+	cmd := s.runner.Run("ffmpeg",
 		"-i", filePath,
 		"-vf", "fps=2,scale=224:224:force_original_aspect_ratio=increase,crop=224:224",
 		"-f", "rawvideo",

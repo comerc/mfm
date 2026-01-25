@@ -30,24 +30,30 @@ func TestService_Read_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	service := &Repo{}
-	data, err := service.Read(testFile)
+	repo := New(nil)
+	frames, err := repo.Read(testFile)
 
 	if err != nil {
 		t.Errorf("expected no error, got %s", err)
 	}
 
-	if len(data) == 0 {
-		t.Error("expected image data, got empty")
+	if len(frames) != 1 {
+		t.Errorf("expected 1 frame, got %d", len(frames))
+	}
+
+	frame := frames[0]
+	expectedSize := 224 * 224 * 3
+	if len(frame) != expectedSize {
+		t.Errorf("expected frame size %d, got %d", expectedSize, len(frame))
 	}
 }
 
 func TestService_Read_FileNotFound(t *testing.T) {
 	tempDir := t.TempDir()
-	service := &Repo{}
+	repo := New(nil)
 
 	nonExistentFile := filepath.Join(tempDir, "nonexistent.png")
-	_, err := service.Read(nonExistentFile)
+	_, err := repo.Read(nonExistentFile)
 
 	if err == nil {
 		t.Error("expected error for non-existent file")
@@ -68,8 +74,8 @@ func TestService_Read_UnsupportedType(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	service := &Repo{}
-	_, err = service.Read(testFile)
+	repo := New(nil)
+	_, err = repo.Read(testFile)
 
 	if err == nil {
 		t.Error("expected error for unsupported file type")
