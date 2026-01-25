@@ -2,33 +2,35 @@ package moderation
 
 import (
 	"fmt"
-
-	"github.com/comerc/nsfw-mod/internal/repo/model_runner"
 )
 
-type FileReader interface {
+type MediaReader interface {
 	Read(filePath string) ([]byte, error)
+}
+
+type ModelRunner interface {
+	Infer(data []byte) (float64, error)
 }
 
 // Service implements Service
 type Service struct {
 	uploadDir   string
-	fileReader  FileReader
-	modelRunner *modelrunner.Repo
+	mediaReader MediaReader
+	modelRunner ModelRunner
 }
 
 // New creates a new instance of ModerationService
-func New(uploadDir string, fileReader FileReader, modelRunner *modelrunner.Repo) *Service {
+func New(uploadDir string, mediaReader MediaReader, modelRunner ModelRunner) *Service {
 	return &Service{
 		uploadDir:   uploadDir,
-		fileReader:  fileReader,
+		mediaReader: mediaReader,
 		modelRunner: modelRunner,
 	}
 }
 
 // Moderate analyzes the file with the given filePath for NSFW content
 func (s *Service) Moderate(filePath string) Result {
-	imgData, err := s.fileReader.Read(filePath)
+	imgData, err := s.mediaReader.Read(filePath)
 
 	if err != nil {
 		return Result{
