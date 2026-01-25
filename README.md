@@ -16,9 +16,9 @@ The project uses ONNX Runtime for ML model inference. Install the ONNX Runtime s
 
 ### Model
 
-Download an ONNX NSFW detection model and place it as `assets/model.onnx`. The model should accept input shape `[batch_size, 224, 224, 3]` (float32, normalized 0-1) and output shape `[batch_size, 1]` (float32, probability of NSFW).
+Download an ONNX NSFW detection model and place it as `assets/<model>.onnx`. The model should accept input shape `[batch_size, 224, 224, 3]` (float32, normalized 0-1) and output shape `[batch_size, 1]` (float32, probability of NSFW).
 
-see: doc/models/OpenNSFW2.md
+see: doc/models/<model>.md
 
 ## TODO
 

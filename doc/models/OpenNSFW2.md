@@ -43,7 +43,7 @@ model = tf.keras.Model(inputs=inputs, outputs=outputs)
 print("🔄 Конвертация в ONNX...")
 spec = (tf.TensorSpec((None, 224, 224, 3), tf.float32, name="input"),)
 
-output_path = "assets/model.onnx"
+output_path = "assets/opennsfw2.onnx"
 model_proto, _ = tf2onnx.convert.from_keras(
     model, 
     input_signature=spec, 
@@ -74,7 +74,7 @@ python convert.py
 
 ### Шаг 4: Технические параметры модели
 
-После выполнения у тебя в папке `assets/` появится файл `model.onnx` со следующими характеристиками:
+После выполнения у тебя в папке `assets/` появится файл `opennsfw2.onnx.onnx` со следующими характеристиками:
 
 * **Input (`input`)**: Тензор формы `[batch_size, 224, 224, 3]`.
 * **Тип данных**: `float32`.

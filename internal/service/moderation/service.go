@@ -2,6 +2,8 @@ package moderation
 
 import (
 	"fmt"
+
+	"github.com/comerc/nsfw-mod/internal/domain"
 )
 
 type MediaReader interface {
@@ -9,7 +11,7 @@ type MediaReader interface {
 }
 
 type ModelRunner interface {
-	Infer(data [][]byte) (bool, float32, error)
+	Infer(data [][]byte) (domain.ModerationResult, error)
 }
 
 // Service implements Service
@@ -29,26 +31,22 @@ func New(uploadDir string, mediaReader MediaReader, modelRunner ModelRunner) *Se
 }
 
 // Moderate analyzes the file with the given filePath for NSFW content
-func (s *Service) Moderate(filePath string) Result {
+func (s *Service) Moderate(filePath string) domain.ModerationResult {
 	frames, err := s.mediaReader.Read(filePath)
 
 	if err != nil {
-		return Result{
+		return domain.ModerationResult{
 			Error: err.Error(),
 		}
 	}
 
 	// Run inference via ModelRunner
-	isNSFW, score, err := s.modelRunner.Infer(frames)
+	result, err := s.modelRunner.Infer(frames)
 	if err != nil {
-		return Result{
+		return domain.ModerationResult{
 			Error: fmt.Sprintf("inference failed: %v", err),
 		}
 	}
 
-	return Result{
-		IsNSFW:     isNSFW,
-		Score:      score,
-		Categories: []string{},
-	}
+	return result
 }

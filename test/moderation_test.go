@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	mediareader "github.com/comerc/nsfw-mod/internal/repo/media_reader"
+	mobilenetrunner "github.com/comerc/nsfw-mod/internal/repo/mobilenet_runner"
 	modelrunner "github.com/comerc/nsfw-mod/internal/repo/model_runner"
 	"github.com/comerc/nsfw-mod/internal/service/moderation"
 )
@@ -70,12 +71,13 @@ func TestModerationService_Moderate_RealAssets(t *testing.T) {
 	modelRunner := modelrunner.New()
 
 	// Проверяем наличие модели, если её нет - пропускаем интеграционные тесты
-	if _, err := os.Stat("../assets/model.onnx"); os.IsNotExist(err) {
-		t.Skip("Model file not found in ../assets/model.onnx, skipping integration test")
+	if _, err := os.Stat("../assets/opennsfw2.onnx"); os.IsNotExist(err) {
+		t.Skip("Model file not found in ../assets/opennsfw2.onnx, skipping integration test")
 	}
 
-	mediaReader := mediareader.New()
 	// Директория не важна для этого теста, так как передаем полный путь
+	_ = mobilenetrunner.New() // Ensure compile
+	mediaReader := mediareader.New()
 	service := moderation.New(".", mediaReader, modelRunner)
 
 	assetsDir := "../assets"
@@ -97,7 +99,54 @@ func TestModerationService_Moderate_RealAssets(t *testing.T) {
 				t.Fatalf("Processing failed for %s: %s", f.Name(), result.Error)
 			}
 
-			t.Logf("Image: %s, IsNSFW: %v, Score: %.4f", f.Name(), result.IsNSFW, result.Score)
+			t.Logf("Image: %s, IsNSFW: %v, Score: %.4f, Categories: %v", f.Name(), result.IsNSFW, result.Score, result.Categories)
+		})
+	}
+}
+
+func TestModerationService_Moderate_Classifier(t *testing.T) {
+	// Инициализируем репо с перехватом паники (если нет либы)
+	defer func() {
+		if r := recover(); r != nil {
+			t.Skipf("Skipping classifier test due to initialization failure: %v", r)
+		}
+	}()
+
+	// Проверяем наличие модели
+	if _, err := os.Stat("../assets/mobilenet_v3_small.onnx"); os.IsNotExist(err) {
+		t.Skip("Model file not found in ../assets/mobilenet_v3_small.onnx, skipping test")
+	}
+
+	mediaReader := mediareader.New()
+	mobilenetRunner := mobilenetrunner.New()
+	// Используем mobilenet как modelRunner
+	service := moderation.New(".", mediaReader, mobilenetRunner)
+
+	assetsDir := "../assets"
+	files, err := os.ReadDir(assetsDir)
+	if err != nil {
+		t.Fatalf("Failed to read assets directory: %v", err)
+	}
+
+	for _, f := range files {
+		if f.IsDir() || !strings.HasSuffix(f.Name(), ".png") {
+			continue
+		}
+
+		t.Run(f.Name(), func(t *testing.T) {
+			fullPath := filepath.Join(assetsDir, f.Name())
+			result := service.Moderate(fullPath)
+
+			if result.Error != "" {
+				t.Fatalf("Processing failed for %s: %s", f.Name(), result.Error)
+			}
+
+			// MobileNet should return categories
+			if len(result.Categories) == 0 {
+				t.Errorf("Expected categories for %s, got none", f.Name())
+			}
+
+			t.Logf("Image: %s, Categories: %v, Score: %.4f", f.Name(), result.Categories, result.Score)
 		})
 	}
 }

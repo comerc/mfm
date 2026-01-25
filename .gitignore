@@ -35,4 +35,4 @@ nsfw-mod
 
 tmp
 
-assets/model*.onnx
+assets/*.onnx
