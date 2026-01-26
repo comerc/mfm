@@ -15,7 +15,7 @@ import (
 	"github.com/comerc/nsfw-mod/internal/service/moderation"
 )
 
-func TestModerationService_Moderate_Success(t *testing.T) {
+func TestModerationService_Moderate_OpenRunner_Success(t *testing.T) {
 	// Create temporary directory for testing
 	tempDir := t.TempDir()
 	testFile := filepath.Join(tempDir, "test.png")
@@ -61,7 +61,7 @@ func TestModerationService_Moderate_Success(t *testing.T) {
 	}
 }
 
-func TestModerationService_Moderate_RealAssets(t *testing.T) {
+func TestModerationService_Moderate_OpenRunner_RealAssets(t *testing.T) {
 	// Инициализируем репо с перехватом паники (если нет либы)
 	defer func() {
 		if r := recover(); r != nil {
@@ -121,7 +121,7 @@ func TestModerationService_Moderate_FileNotFound(t *testing.T) {
 	}
 }
 
-func TestModerationService_Moderate_ViTSuccess(t *testing.T) {
+func TestModerationService_Moderate_ViTRunner_Success(t *testing.T) {
 	// Create temporary directory for testing
 	tempDir := t.TempDir()
 	testFile := filepath.Join(tempDir, "test.png")
@@ -179,7 +179,7 @@ func TestModerationService_Moderate_ViTSuccess(t *testing.T) {
 	t.Logf("ViT Result - IsNSFW: %v, Score: %.4f", result.IsNSFW, result.Score)
 }
 
-func TestModerationService_Moderate_ViTRealAssets(t *testing.T) {
+func TestModerationService_Moderate_ViTRunner_RealAssets(t *testing.T) {
 	// Инициализируем репо с перехватом паники (если нет либы)
 	defer func() {
 		if r := recover(); r != nil {
