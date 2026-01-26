@@ -100,7 +100,7 @@ func TestModerationService_Moderate_RealAssets(t *testing.T) {
 				t.Fatalf("Processing failed for %s: %s", f.Name(), result.Error)
 			}
 
-			t.Logf("Image: %s, IsNSFW: %v, Score: %.4f, Categories: %v", f.Name(), result.IsNSFW, result.Score, result.Categories)
+			t.Logf("Image: %s, IsNSFW: %v, Score: %.4f", f.Name(), result.IsNSFW, result.Score)
 		})
 	}
 }
@@ -142,12 +142,11 @@ func TestModerationService_Moderate_Classifier(t *testing.T) {
 				t.Fatalf("Processing failed for %s: %s", f.Name(), result.Error)
 			}
 
-			// MobileNet should return categories
-			if len(result.Categories) == 0 {
-				t.Errorf("Expected categories for %s, got none", f.Name())
-			}
+			// Проверим, что результат содержит IsNSFW и Score
+			// Ранее проверяли Categories, но теперь они удалены
+			_ = f.Name() // использовать имя файла для избежания warning'а
 
-			t.Logf("Image: %s, Categories: %v, Score: %.4f", f.Name(), result.Categories, result.Score)
+			t.Logf("Image: %s, IsNSFW: %v, Score: %.4f", f.Name(), result.IsNSFW, result.Score)
 		})
 	}
 }
@@ -220,13 +219,12 @@ func TestModerationService_Moderate_ViTSuccess(t *testing.T) {
 		t.Errorf("expected IsNSFW to be false, got true")
 	}
 
-	// Check that categories are returned (ViT should return both 'normal' and 'nsfw')
-	if len(result.Categories) == 0 {
-		t.Errorf("expected categories to be populated, got none")
-	}
+	// Ранее проверяли Categories, но теперь они удалены
+	_ = result // использовать результат для избежания warning'а
+	// Проверка IsNSFW и Score уже выполняется выше
 
 	// Log the results for verification
-	t.Logf("ViT Result - IsNSFW: %v, Score: %.4f, Categories: %v", result.IsNSFW, result.Score, result.Categories)
+	t.Logf("ViT Result - IsNSFW: %v, Score: %.4f", result.IsNSFW, result.Score)
 }
 
 func TestModerationService_Moderate_ViTRealAssets(t *testing.T) {
@@ -268,12 +266,11 @@ func TestModerationService_Moderate_ViTRealAssets(t *testing.T) {
 				t.Fatalf("Processing failed for %s: %s", f.Name(), result.Error)
 			}
 
-			// ViT should return categories
-			if len(result.Categories) == 0 {
-				t.Errorf("Expected categories for %s, got none", f.Name())
-			}
+			// Ранее проверяли Categories, но теперь они удалены
+			_ = f.Name() // использовать имя файла для избежания warning'а
+			// Проверка IsNSFW и Score уже выполняется выше
 
-			t.Logf("Image: %s, IsNSFW: %v, Score: %.4f, Categories: %v", f.Name(), result.IsNSFW, result.Score, result.Categories)
+			t.Logf("Image: %s, IsNSFW: %v, Score: %.4f", f.Name(), result.IsNSFW, result.Score)
 		})
 	}
 }

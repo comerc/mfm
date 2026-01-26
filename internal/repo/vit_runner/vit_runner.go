@@ -131,8 +131,7 @@ func (r *Repo) Infer(frames [][]byte) (domain.ModerationResult, error) {
 	isNSFW := nsfwProb > 0.5
 
 	return domain.ModerationResult{
-		IsNSFW:     isNSFW,
-		Score:      nsfwProb, // Используем вероятность NSFW как основной Score, как в эталонной реализации
-		Categories: []string{"normal", "nsfw"},
+		IsNSFW: isNSFW,
+		Score:  nsfwProb, // Используем вероятность NSFW как основной Score, как в эталонной реализации
 	}, nil
 }
