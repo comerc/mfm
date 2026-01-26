@@ -17,9 +17,6 @@ type Repo struct {
 
 // New создает новый экземпляр репозитория ViT
 func New() *Repo {
-	// Инициализация среды (идемпотентно)
-	_ = onnxruntime_go.InitializeEnvironment()
-
 	// Путь к модели
 	modelPath := filepath.Join("assets", "vit_nsfw.onnx")
 

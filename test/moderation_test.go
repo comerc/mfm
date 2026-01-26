@@ -13,6 +13,7 @@ import (
 	openrunner "github.com/comerc/nsfw-mod/internal/repo/open_runner"
 	vitrunner "github.com/comerc/nsfw-mod/internal/repo/vit_runner"
 	"github.com/comerc/nsfw-mod/internal/service/moderation"
+	"github.com/comerc/nsfw-mod/pkg/onnxinit"
 )
 
 func TestModerationService_Moderate_OpenRunner_Success(t *testing.T) {
@@ -46,6 +47,9 @@ func TestModerationService_Moderate_OpenRunner_Success(t *testing.T) {
 		}
 	}()
 
+	// Инициализируем ONNX Runtime
+	onnxinit.Initialize()
+
 	mediaReader := mediareader.New()
 	modelRunner := openrunner.New()
 	service := moderation.New(tempDir, mediaReader, modelRunner)
@@ -68,6 +72,10 @@ func TestModerationService_Moderate_OpenRunner_RealAssets(t *testing.T) {
 			t.Skipf("Skipping real assets test due to initialization failure (missing lib?): %v", r)
 		}
 	}()
+
+	// Инициализируем ONNX Runtime
+	onnxinit.Initialize()
+
 	modelRunner := openrunner.New()
 
 	// Проверяем наличие модели, если её нет - пропускаем интеграционные тесты
@@ -105,6 +113,10 @@ func TestModerationService_Moderate_OpenRunner_RealAssets(t *testing.T) {
 
 func TestModerationService_Moderate_FileNotFound(t *testing.T) {
 	tempDir := t.TempDir()
+
+	// Инициализируем ONNX Runtime
+	onnxinit.Initialize()
+
 	mediaReader := mediareader.New()
 	modelRunner := openrunner.New()
 	service := moderation.New(tempDir, mediaReader, modelRunner)
@@ -152,6 +164,9 @@ func TestModerationService_Moderate_ViTRunner_Success(t *testing.T) {
 		}
 	}()
 
+	// Инициализируем ONNX Runtime
+	onnxinit.Initialize()
+
 	// Проверяем наличие модели ViT
 	if _, err := os.Stat("../assets/vit_nsfw.onnx"); os.IsNotExist(err) {
 		t.Skip("Model file not found in ../assets/vit_nsfw.onnx, skipping integration test")
@@ -186,6 +201,10 @@ func TestModerationService_Moderate_ViTRunner_RealAssets(t *testing.T) {
 			t.Skipf("Skipping ViT real assets test due to initialization failure (missing lib?): %v", r)
 		}
 	}()
+
+	// Инициализируем ONNX Runtime
+	onnxinit.Initialize()
+
 	vitRunner := vitrunner.New()
 
 	// Проверяем наличие модели, если её нет - пропускаем интеграционные тесты

@@ -17,14 +17,6 @@ type Repo struct {
 
 // New создает новый экземпляр репозитория моделей
 func New() *Repo {
-	// TODO: надо вынести эту инициализацию наружу, чтобы не зависеть от запуска конкретно этого ранера
-	// Устанавливаем путь к shared library
-	onnxruntime_go.SetSharedLibraryPath("/usr/local/lib/libonnxruntime.dylib")
-
-	// Инициализируем ONNX Runtime
-	// Игнорируем ошибку повторной инициализации, которая может возникнуть в тестах
-	_ = onnxruntime_go.InitializeEnvironment()
-
 	// Путь к модели
 	modelPath := filepath.Join("assets", "opennsfw2.onnx")
 
