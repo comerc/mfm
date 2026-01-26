@@ -30,7 +30,7 @@ func New() *Repo {
 		if _, err := os.Stat(parentPath); err == nil {
 			modelPath = parentPath
 		} else {
-			fmt.Printf("ViTRepo: Model not found at %s or %s, using mock.\n", modelPath, parentPath)
+			fmt.Printf("vitrunner: Model not found at %s or %s, using mock.\n", modelPath, parentPath)
 			return &Repo{
 				session: nil,
 			}

@@ -11,7 +11,7 @@ import (
 
 	mediareader "github.com/comerc/nsfw-mod/internal/repo/media_reader"
 	mobilenetrunner "github.com/comerc/nsfw-mod/internal/repo/mobilenet_runner"
-	modelrunner "github.com/comerc/nsfw-mod/internal/repo/model_runner"
+	openrunner "github.com/comerc/nsfw-mod/internal/repo/open_runner"
 	vitrunner "github.com/comerc/nsfw-mod/internal/repo/vit_runner"
 	"github.com/comerc/nsfw-mod/internal/service/moderation"
 )
@@ -48,7 +48,7 @@ func TestModerationService_Moderate_Success(t *testing.T) {
 	}()
 
 	mediaReader := mediareader.New()
-	modelRunner := modelrunner.New()
+	modelRunner := openrunner.New()
 	service := moderation.New(tempDir, mediaReader, modelRunner)
 	result := service.Moderate(testFile)
 
@@ -69,7 +69,7 @@ func TestModerationService_Moderate_RealAssets(t *testing.T) {
 			t.Skipf("Skipping real assets test due to initialization failure (missing lib?): %v", r)
 		}
 	}()
-	modelRunner := modelrunner.New()
+	modelRunner := openrunner.New()
 
 	// Проверяем наличие модели, если её нет - пропускаем интеграционные тесты
 	if _, err := os.Stat("../assets/opennsfw2.onnx"); os.IsNotExist(err) {
@@ -154,7 +154,7 @@ func TestModerationService_Moderate_Classifier(t *testing.T) {
 func TestModerationService_Moderate_FileNotFound(t *testing.T) {
 	tempDir := t.TempDir()
 	mediaReader := mediareader.New()
-	modelRunner := modelrunner.New()
+	modelRunner := openrunner.New()
 	service := moderation.New(tempDir, mediaReader, modelRunner)
 
 	nonExistentFile := filepath.Join(tempDir, "nonexistent.png")
@@ -243,7 +243,7 @@ func TestModerationService_Moderate_ViTRealAssets(t *testing.T) {
 
 	// Директория не важна для этого теста, так как передаем полный путь
 	_ = mobilenetrunner.New() // Ensure compile
-	_ = modelrunner.New()     // Ensure compile
+	_ = openrunner.New()      // Ensure compile
 	mediaReader := mediareader.New()
 	service := moderation.New(".", mediaReader, vitRunner)
 
