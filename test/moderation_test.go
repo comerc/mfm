@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	mediareader "github.com/comerc/nsfw-mod/internal/repo/media_reader"
-	mobilenetrunner "github.com/comerc/nsfw-mod/internal/repo/mobilenet_runner"
 	openrunner "github.com/comerc/nsfw-mod/internal/repo/open_runner"
 	vitrunner "github.com/comerc/nsfw-mod/internal/repo/vit_runner"
 	"github.com/comerc/nsfw-mod/internal/service/moderation"
@@ -77,7 +76,6 @@ func TestModerationService_Moderate_RealAssets(t *testing.T) {
 	}
 
 	// Директория не важна для этого теста, так как передаем полный путь
-	_ = mobilenetrunner.New() // Ensure compile
 	mediaReader := mediareader.New()
 	service := moderation.New(".", mediaReader, modelRunner)
 
@@ -99,52 +97,6 @@ func TestModerationService_Moderate_RealAssets(t *testing.T) {
 			if result.Error != "" {
 				t.Fatalf("Processing failed for %s: %s", f.Name(), result.Error)
 			}
-
-			t.Logf("Image: %s, IsNSFW: %v, Score: %.4f", f.Name(), result.IsNSFW, result.Score)
-		})
-	}
-}
-
-func TestModerationService_Moderate_Classifier(t *testing.T) {
-	// Инициализируем репо с перехватом паники (если нет либы)
-	defer func() {
-		if r := recover(); r != nil {
-			t.Skipf("Skipping classifier test due to initialization failure: %v", r)
-		}
-	}()
-
-	// Проверяем наличие модели
-	if _, err := os.Stat("../assets/mobilenet_v3_small.onnx"); os.IsNotExist(err) {
-		t.Skip("Model file not found in ../assets/mobilenet_v3_small.onnx, skipping test")
-	}
-
-	mediaReader := mediareader.New()
-	mobilenetRunner := mobilenetrunner.New()
-	// Используем mobilenet как modelRunner
-	service := moderation.New(".", mediaReader, mobilenetRunner)
-
-	assetsDir := "../assets"
-	files, err := os.ReadDir(assetsDir)
-	if err != nil {
-		t.Fatalf("Failed to read assets directory: %v", err)
-	}
-
-	for _, f := range files {
-		if f.IsDir() || !strings.HasSuffix(f.Name(), ".png") {
-			continue
-		}
-
-		t.Run(f.Name(), func(t *testing.T) {
-			fullPath := filepath.Join(assetsDir, f.Name())
-			result := service.Moderate(fullPath)
-
-			if result.Error != "" {
-				t.Fatalf("Processing failed for %s: %s", f.Name(), result.Error)
-			}
-
-			// Проверим, что результат содержит IsNSFW и Score
-			// Ранее проверяли Categories, но теперь они удалены
-			_ = f.Name() // использовать имя файла для избежания warning'а
 
 			t.Logf("Image: %s, IsNSFW: %v, Score: %.4f", f.Name(), result.IsNSFW, result.Score)
 		})
@@ -242,8 +194,7 @@ func TestModerationService_Moderate_ViTRealAssets(t *testing.T) {
 	}
 
 	// Директория не важна для этого теста, так как передаем полный путь
-	_ = mobilenetrunner.New() // Ensure compile
-	_ = openrunner.New()      // Ensure compile
+	_ = openrunner.New() // Ensure compile
 	mediaReader := mediareader.New()
 	service := moderation.New(".", mediaReader, vitRunner)
 
