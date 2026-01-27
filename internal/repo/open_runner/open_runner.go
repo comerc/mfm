@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/comerc/nsfw-mod/internal/domain"
 	"github.com/yalue/onnxruntime_go"
 )
 
@@ -47,9 +46,9 @@ func New() *Repo {
 }
 
 // Infer запускает inference на данных (пакет кадров)
-func (r *Repo) Infer(frames [][]byte) (domain.ModerationResult, error) {
+func (r *Repo) Infer(frames [][]byte) ([]float32, error) {
 	if len(frames) == 0 || r.session == nil {
-		return domain.ModerationResult{}, nil
+		return []float32{}, nil
 	}
 
 	batchSize := len(frames)
@@ -59,7 +58,7 @@ func (r *Repo) Infer(frames [][]byte) (domain.ModerationResult, error) {
 	inputData := make([]float32, batchSize*224*224*3)
 	for i, frame := range frames {
 		if len(frame) != 224*224*3 {
-			return domain.ModerationResult{}, errors.New("invalid frame size")
+			return []float32{}, errors.New("invalid frame size")
 		}
 
 		// Preprocessing for OpenNSFW2: BGR, subtract mean
@@ -80,7 +79,7 @@ func (r *Repo) Infer(frames [][]byte) (domain.ModerationResult, error) {
 	// Создаем тензор
 	inputTensor, err := onnxruntime_go.NewTensor(inputShape, inputData)
 	if err != nil {
-		return domain.ModerationResult{}, fmt.Errorf("failed to create input tensor: %v", err)
+		return []float32{}, fmt.Errorf("failed to create input tensor: %v", err)
 	}
 	defer inputTensor.Destroy()
 
@@ -88,27 +87,25 @@ func (r *Repo) Infer(frames [][]byte) (domain.ModerationResult, error) {
 	outputs := []onnxruntime_go.Value{nil}
 	err = r.session.Run([]onnxruntime_go.Value{inputTensor}, outputs)
 	if err != nil {
-		return domain.ModerationResult{}, fmt.Errorf("inference failed: %v", err)
+		return []float32{}, fmt.Errorf("inference failed: %v", err)
 	}
 	defer outputs[0].Destroy()
 
 	// Получаем результат
 	outputData := outputs[0].(*onnxruntime_go.Tensor[float32]).GetData()
 
-	var maxScore float32
-	// Предполагаем, что output - вероятность NSFW для каждого кадра
+	// Возвращаем все оценки для каждого кадра
+	scores := make([]float32, batchSize)
 	for i := 0; i < batchSize; i++ {
 		score := outputData[i]
-		if score > maxScore {
-			maxScore = score
+		// Ограничиваем значение в диапазоне [0, 1] для безопасности
+		if score < 0.0 {
+			score = 0.0
+		} else if score > 1.0 {
+			score = 1.0
 		}
+		scores[i] = score
 	}
 
-	// Определяем, является ли контент NSFW на основе максимальной вероятности NSFW (>0.5)
-	isNSFW := maxScore > 0.5
-
-	return domain.ModerationResult{
-		IsNSFW: isNSFW,
-		Score:  maxScore, // Используем максимальную вероятность NSFW как основной Score
-	}, nil
+	return scores, nil
 }

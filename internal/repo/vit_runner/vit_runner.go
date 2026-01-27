@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/comerc/nsfw-mod/internal/domain"
 	"github.com/yalue/onnxruntime_go"
 )
 
@@ -47,9 +46,9 @@ func New() *Repo {
 }
 
 // Infer запускает inference на данных (пакет кадров)
-func (r *Repo) Infer(frames [][]byte) (domain.ModerationResult, error) {
+func (r *Repo) Infer(frames [][]byte) ([]float32, error) {
 	if len(frames) == 0 || r.session == nil {
-		return domain.ModerationResult{}, nil
+		return []float32{}, nil
 	}
 
 	batchSize := len(frames)
@@ -62,7 +61,7 @@ func (r *Repo) Infer(frames [][]byte) (domain.ModerationResult, error) {
 
 	for i, frame := range frames {
 		if len(frame) != 224*224*3 {
-			return domain.ModerationResult{}, errors.New("invalid frame size")
+			return []float32{}, errors.New("invalid frame size")
 		}
 
 		// Подготовка данных для ViT:
@@ -100,7 +99,7 @@ func (r *Repo) Infer(frames [][]byte) (domain.ModerationResult, error) {
 	// Создаем тензор
 	inputTensor, err := onnxruntime_go.NewTensor(inputShape, inputData)
 	if err != nil {
-		return domain.ModerationResult{}, fmt.Errorf("failed to create input tensor: %v", err)
+		return []float32{}, fmt.Errorf("failed to create input tensor: %v", err)
 	}
 	defer inputTensor.Destroy()
 
@@ -108,7 +107,7 @@ func (r *Repo) Infer(frames [][]byte) (domain.ModerationResult, error) {
 	outputs := []onnxruntime_go.Value{nil}
 	err = r.session.Run([]onnxruntime_go.Value{inputTensor}, outputs)
 	if err != nil {
-		return domain.ModerationResult{}, fmt.Errorf("inference failed: %v", err)
+		return []float32{}, fmt.Errorf("inference failed: %v", err)
 	}
 	defer outputs[0].Destroy()
 
@@ -118,23 +117,21 @@ func (r *Repo) Infer(frames [][]byte) (domain.ModerationResult, error) {
 	// Результат содержит пары значений: [normal_prob, nsfw_prob, normal_prob, nsfw_prob, ...] для каждого кадра в пакете
 	expectedLength := batchSize * 2 // 2 значения для каждого кадра
 	if len(outputData) != expectedLength {
-		return domain.ModerationResult{}, fmt.Errorf("unexpected output length from model: got %d, expected %d", len(outputData), expectedLength)
+		return []float32{}, fmt.Errorf("unexpected output length from model: got %d, expected %d", len(outputData), expectedLength)
 	}
 
-	var maxScore float32
-	// Проходим по всем парам значений (normal_prob, nsfw_prob) для каждого кадра
+	// Возвращаем оценки NSFW для каждого кадра
+	scores := make([]float32, batchSize)
 	for i := 0; i < batchSize; i++ {
 		nsfwProb := outputData[i*2+1] // индекс 1, 3, 5, ... - вероятности NSFW для каждого кадра
-		if nsfwProb > maxScore {
-			maxScore = nsfwProb
+		// Ограничиваем значение в диапазоне [0, 1] для безопасности
+		if nsfwProb < 0.0 {
+			nsfwProb = 0.0
+		} else if nsfwProb > 1.0 {
+			nsfwProb = 1.0
 		}
+		scores[i] = nsfwProb
 	}
 
-	// Определяем, является ли контент NSFW на основе максимальной вероятности NSFW (>0.5)
-	isNSFW := maxScore > 0.5
-
-	return domain.ModerationResult{
-		IsNSFW: isNSFW,
-		Score:  maxScore, // Используем максимальную вероятность NSFW как основной Score
-	}, nil
+	return scores, nil
 }

@@ -8,32 +8,39 @@ func TestRepo_Infer(t *testing.T) {
 	repo := New()
 
 	// Test with nil data
-	result, err := repo.Infer(nil)
+	scores, err := repo.Infer(nil)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
-	if result.IsNSFW != false {
-		t.Errorf("expected false, got %v", result.IsNSFW)
+	// For nil/empty data, should return empty slice
+	if len(scores) != 0 {
+		t.Errorf("expected empty slice, got length %d", len(scores))
 	}
 
 	// Test with empty batch
-	result, err = repo.Infer([][]byte{})
+	scores, err = repo.Infer([][]byte{})
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
-	if result.IsNSFW != false {
-		t.Errorf("expected false, got %v", result.IsNSFW)
+	// For empty batch, should return empty slice
+	if len(scores) != 0 {
+		t.Errorf("expected empty slice, got length %d", len(scores))
 	}
 
-	// Test with some data (mock implementation always returns false)
+	// Test with some data (mock implementation always returns appropriate values when session is nil)
 	frame := make([]byte, 224*224*3)
 	frames := [][]byte{frame}
-	result, err = repo.Infer(frames)
+	scores, err = repo.Infer(frames)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
 
-	if result.IsNSFW != false {
-		t.Errorf("expected false, got %v", result.IsNSFW)
+	// With mock implementation (session=nil), scores should be empty or contain zeros
+	if len(scores) == 0 {
+		// This is expected when session is nil
+	} else if len(scores) != 1 {
+		t.Errorf("expected 1 score, got %d", len(scores))
+	} else if scores[0] != 0.0 {
+		t.Errorf("expected score of 0.0, got %f", scores[0])
 	}
 }

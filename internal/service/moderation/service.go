@@ -1,15 +1,11 @@
 package moderation
 
-import (
-	"github.com/comerc/nsfw-mod/internal/domain"
-)
-
 type MediaReader interface {
 	Read(filePath string) ([][]byte, error)
 }
 
 type ModelRunner interface {
-	Infer(data [][]byte) (domain.ModerationResult, error)
+	Infer(data [][]byte) ([]float32, error)
 }
 
 // Service implements Service
@@ -41,14 +37,21 @@ func (s *Service) Moderate(filePaths []string) []float32 {
 		}
 
 		// Run inference via ModelRunner для каждого файла отдельно
-		result, err := s.modelRunner.Infer(oneFileFrames)
+		frameScores, err := s.modelRunner.Infer(oneFileFrames)
 		if err != nil {
 			// В случае ошибки инференса, добавляем нулевую оценку
 			scores = append(scores, 0.0)
 			continue
 		}
 
-		scores = append(scores, result.Score)
+		// Берем максимальную оценку из всех кадров файла
+		var maxScore float32
+		for _, score := range frameScores {
+			if score > maxScore {
+				maxScore = score
+			}
+		}
+		scores = append(scores, maxScore)
 	}
 
 	return scores
