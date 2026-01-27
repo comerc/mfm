@@ -54,15 +54,17 @@ func TestModerationService_Moderate_OpenRunner_Success(t *testing.T) {
 	mediaReader := mediareader.New()
 	modelRunner := openrunner.New()
 	service := moderation.New(tempDir, mediaReader, modelRunner)
-	result := service.Moderate([]string{testFile})
+	scores := service.Moderate([]string{testFile})
 
-	if result.Error != "" {
-		t.Errorf("expected no error, got %s", result.Error)
-	}
-
-	// Simple red image should not be NSFW
-	if result.IsNSFW {
-		t.Errorf("expected IsNSFW to be false, got true")
+	// Проверяем, что получен хотя бы один результат
+	if len(scores) == 0 {
+		t.Errorf("expected at least one score, got none")
+	} else {
+		score := scores[0]
+		// Simple red image should not be NSFW, so score should be low
+		if score > 0.5 {
+			t.Errorf("expected score <= 0.5 for simple red image, got %f", score)
+		}
 	}
 }
 
@@ -101,13 +103,15 @@ func TestModerationService_Moderate_OpenRunner_RealAssets(t *testing.T) {
 
 		t.Run(f.Name(), func(t *testing.T) {
 			filePath := filepath.Join(assetsDir, f.Name())
-			result := service.Moderate([]string{filePath})
+			scores := service.Moderate([]string{filePath})
 
-			if result.Error != "" {
-				t.Fatalf("Processing failed for %s: %s", f.Name(), result.Error)
+			if len(scores) == 0 {
+				t.Fatalf("Processing failed for %s: no scores returned", f.Name())
 			}
 
-			t.Logf("Image: %s, IsNSFW: %v, Score: %.4f", f.Name(), result.IsNSFW, result.Score)
+			score := scores[0]
+			isNSFW := score > 0.5 // Предполагаем порог 0.5 для определения NSFW
+			t.Logf("Image: %s, IsNSFW: %v, Score: %.4f", f.Name(), isNSFW, score)
 		})
 	}
 }
@@ -123,14 +127,13 @@ func TestModerationService_Moderate_FileNotFound(t *testing.T) {
 	service := moderation.New(tempDir, mediaReader, modelRunner)
 
 	nonExistentFile := filepath.Join(tempDir, "nonexistent.png")
-	result := service.Moderate([]string{nonExistentFile})
+	scores := service.Moderate([]string{nonExistentFile})
 
-	if result.Error == "" {
-		t.Error("expected error for non-existent file")
-	}
-
-	if !strings.Contains(result.Error, "file not found") || !strings.Contains(result.Error, "nonexistent.png") {
-		t.Errorf("expected error containing 'file not found' and 'nonexistent.png', got %s", result.Error)
+	// Ожидаем, что для несуществующего файла будет возвращена пустая оценка или нулевая оценка
+	if len(scores) == 0 {
+		t.Error("expected at least one score (even if zero) for non-existent file")
+	} else if scores[0] != 0.0 {
+		t.Errorf("expected score of 0.0 for non-existent file, got %f", scores[0])
 	}
 }
 
@@ -176,23 +179,23 @@ func TestModerationService_Moderate_ViTRunner_Success(t *testing.T) {
 	mediaReader := mediareader.New()
 	vitRunner := vitrunner.New()
 	service := moderation.New(tempDir, mediaReader, vitRunner)
-	result := service.Moderate([]string{testFile})
+	scores := service.Moderate([]string{testFile})
 
-	if result.Error != "" {
-		t.Errorf("expected no error, got %s", result.Error)
+	// Проверяем, что получен хотя бы один результат
+	if len(scores) == 0 {
+		t.Errorf("expected at least one score, got none")
+	} else {
+		score := scores[0]
+		// Simple red image should not be NSFW, so score should be low
+		if score > 0.5 {
+			t.Errorf("expected score <= 0.5 for simple red image, got %f", score)
+		}
 	}
-
-	// Simple red image should not be NSFW
-	if result.IsNSFW {
-		t.Errorf("expected IsNSFW to be false, got true")
-	}
-
-	// Ранее проверяли Categories, но теперь они удалены
-	_ = result // использовать результат для избежания warning'а
-	// Проверка IsNSFW и Score уже выполняется выше
 
 	// Log the results for verification
-	t.Logf("ViT Result - IsNSFW: %v, Score: %.4f", result.IsNSFW, result.Score)
+	// Получаем оценку из результата
+	score := scores[0]
+	t.Logf("ViT Result - IsNSFW: %v, Score: %.4f", score > 0.5, score)
 }
 
 func TestModerationService_Moderate_ViTRunner_RealAssets(t *testing.T) {
@@ -231,17 +234,15 @@ func TestModerationService_Moderate_ViTRunner_RealAssets(t *testing.T) {
 
 		t.Run(f.Name(), func(t *testing.T) {
 			fullPath := filepath.Join(assetsDir, f.Name())
-			result := service.Moderate([]string{fullPath})
+			scores := service.Moderate([]string{fullPath})
 
-			if result.Error != "" {
-				t.Fatalf("Processing failed for %s: %s", f.Name(), result.Error)
+			if len(scores) == 0 {
+				t.Fatalf("Processing failed for %s: no scores returned", f.Name())
 			}
 
-			// Ранее проверяли Categories, но теперь они удалены
-			_ = f.Name() // использовать имя файла для избежания warning'а
-			// Проверка IsNSFW и Score уже выполняется выше
-
-			t.Logf("Image: %s, IsNSFW: %v, Score: %.4f", f.Name(), result.IsNSFW, result.Score)
+			score := scores[0]
+			isNSFW := score > 0.5 // Предполагаем порог 0.5 для определения NSFW
+			t.Logf("Image: %s, IsNSFW: %v, Score: %.4f", f.Name(), isNSFW, score)
 		})
 	}
 }
@@ -279,18 +280,25 @@ func TestModerationService_Moderate_OpenRunner_BatchProcessing(t *testing.T) {
 	}
 
 	// Test batch processing with all 7 images
-	result := service.Moderate(imagePaths)
+	scores := service.Moderate(imagePaths)
 
-	if result.Error != "" {
-		t.Fatalf("Batch processing failed: %s", result.Error)
+	if len(scores) == 0 {
+		t.Fatalf("Batch processing failed: no scores returned")
 	}
 
-	t.Logf("Batch Processing Result - IsNSFW: %v, Score: %.4f", result.IsNSFW, result.Score)
-
-	// Basic validation that we got a reasonable result
-	if result.Score < 0.0 || result.Score > 1.0 {
-		t.Errorf("Expected score between 0.0 and 1.0, got: %.4f", result.Score)
+	// Проверяем, что количество возвращенных оценок совпадает с количеством файлов
+	if len(scores) != len(imagePaths) {
+		t.Errorf("Expected %d scores, got %d", len(imagePaths), len(scores))
 	}
+
+	// Базовая проверка разумности результатов
+	for i, score := range scores {
+		if score < 0.0 || score > 1.0 {
+			t.Errorf("Expected score[%d] between 0.0 and 1.0, got: %.4f", i, score)
+		}
+	}
+
+	t.Logf("Batch Processing Result - Scores: %v", scores)
 }
 
 func TestModerationService_Moderate_ViTRunner_BatchProcessing(t *testing.T) {
@@ -326,16 +334,23 @@ func TestModerationService_Moderate_ViTRunner_BatchProcessing(t *testing.T) {
 	}
 
 	// Test batch processing with all 7 images
-	result := service.Moderate(imagePaths)
+	scores := service.Moderate(imagePaths)
 
-	if result.Error != "" {
-		t.Fatalf("Batch processing failed: %s", result.Error)
+	if len(scores) == 0 {
+		t.Fatalf("Batch processing failed: no scores returned")
 	}
 
-	t.Logf("ViT Batch Processing Result - IsNSFW: %v, Score: %.4f", result.IsNSFW, result.Score)
-
-	// Basic validation that we got a reasonable result
-	if result.Score < 0.0 || result.Score > 1.0 {
-		t.Errorf("Expected score between 0.0 and 1.0, got: %.4f", result.Score)
+	// Проверяем, что количество возвращенных оценок совпадает с количеством файлов
+	if len(scores) != len(imagePaths) {
+		t.Errorf("Expected %d scores, got %d", len(imagePaths), len(scores))
 	}
+
+	// Базовая проверка разумности результатов
+	for i, score := range scores {
+		if score < 0.0 || score > 1.0 {
+			t.Errorf("Expected score[%d] between 0.0 and 1.0, got: %.4f", i, score)
+		}
+	}
+
+	t.Logf("ViT Batch Processing Result - Scores: %v", scores)
 }
