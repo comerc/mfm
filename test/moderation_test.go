@@ -438,3 +438,94 @@ func BenchmarkModerationService_Moderate_ViTRunner_BatchProcessing120(b *testing
 		}
 	}
 }
+
+func TestModerationService_Moderate_OpenRunner_RealVideoAssets(t *testing.T) {
+	// Инициализируем репо с перехватом паники (если нет либы)
+	defer func() {
+		if r := recover(); r != nil {
+			t.Skipf("Skipping real video assets test due to initialization failure (missing lib?): %v", r)
+		}
+	}()
+
+	// Инициализируем ONNX Runtime
+	onnxinit.Initialize()
+
+	modelRunner := openrunner.New()
+
+	// Проверяем наличие модели, если её нет - пропускаем интеграционные тесты
+	if _, err := os.Stat("../assets/opennsfw2.onnx"); os.IsNotExist(err) {
+		t.Skip("Model file not found in ../assets/opennsfw2.onnx, skipping integration test")
+	}
+
+	// Директория не важна для этого теста, так как передаем полный путь
+	mediaReader := mediareader.New()
+	service := moderation.New(".", mediaReader, modelRunner)
+
+	videoFiles := []string{"../assets/video1.mp4", "../assets/video2.mp4"}
+
+	for _, videoPath := range videoFiles {
+		// Проверяем существование видеофайла
+		if _, err := os.Stat(videoPath); os.IsNotExist(err) {
+			t.Logf("Video file not found: %s, skipping", videoPath)
+			continue
+		}
+
+		t.Run(filepath.Base(videoPath), func(t *testing.T) {
+			scores := service.Moderate([]string{videoPath})
+
+			if len(scores) == 0 {
+				t.Fatalf("Processing failed for %s: no scores returned", filepath.Base(videoPath))
+			}
+
+			score := scores[0]
+			isNSFW := score > 0.5 // Предполагаем порог 0.5 для определения NSFW
+			t.Logf("Video: %s, IsNSFW: %v, Score: %.4f", filepath.Base(videoPath), isNSFW, score)
+		})
+	}
+}
+
+func TestModerationService_Moderate_ViTRunner_RealVideoAssets(t *testing.T) {
+	// Инициализируем репо с перехватом паники (если нет либы)
+	defer func() {
+		if r := recover(); r != nil {
+			t.Skipf("Skipping ViT real video assets test due to initialization failure (missing lib?): %v", r)
+		}
+	}()
+
+	// Инициализируем ONNX Runtime
+	onnxinit.Initialize()
+
+	vitRunner := vitrunner.New()
+
+	// Проверяем наличие модели, если её нет - пропускаем интеграционные тесты
+	if _, err := os.Stat("../assets/vit_nsfw.onnx"); os.IsNotExist(err) {
+		t.Skip("Model file not found in ../assets/vit_nsfw.onnx, skipping integration test")
+	}
+
+	// Директория не важна для этого теста, так как передаем полный путь
+	_ = openrunner.New() // Ensure compile
+	mediaReader := mediareader.New()
+	service := moderation.New(".", mediaReader, vitRunner)
+
+	videoFiles := []string{"../assets/video1.mp4", "../assets/video2.mp4"}
+
+	for _, videoPath := range videoFiles {
+		// Проверяем существование видеофайла
+		if _, err := os.Stat(videoPath); os.IsNotExist(err) {
+			t.Logf("Video file not found: %s, skipping", videoPath)
+			continue
+		}
+
+		t.Run(filepath.Base(videoPath), func(t *testing.T) {
+			scores := service.Moderate([]string{videoPath})
+
+			if len(scores) == 0 {
+				t.Fatalf("Processing failed for %s: no scores returned", filepath.Base(videoPath))
+			}
+
+			score := scores[0]
+			isNSFW := score > 0.5 // Предполагаем порог 0.5 для определения NSFW
+			t.Logf("Video: %s, IsNSFW: %v, Score: %.4f", filepath.Base(videoPath), isNSFW, score)
+		})
+	}
+}
