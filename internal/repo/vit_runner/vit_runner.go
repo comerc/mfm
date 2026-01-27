@@ -21,15 +21,10 @@ func New() *Repo {
 
 	// Проверяем существование модели
 	if _, err := os.Stat(modelPath); os.IsNotExist(err) {
-		// Try parent directory (for tests)
-		parentPath := filepath.Join("..", "assets", "vit_nsfw.onnx")
-		if _, err := os.Stat(parentPath); err == nil {
-			modelPath = parentPath
-		} else {
-			fmt.Printf("vitrunner: Model not found at %s or %s, using mock.\n", modelPath, parentPath)
-			return &Repo{
-				session: nil,
-			}
+		// Модель не найдена, используем mock
+		fmt.Printf("vitrunner: Model not found at %s, using mock.\n", modelPath)
+		return &Repo{
+			session: nil,
 		}
 	}
 

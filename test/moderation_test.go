@@ -17,6 +17,13 @@ import (
 	"github.com/comerc/nsfw-mod/pkg/onnxinit"
 )
 
+func TestMain(m *testing.M) {
+	// Поднимаемся на уровень выше (из /test в корень)
+	_ = os.Chdir("..")
+
+	os.Exit(m.Run())
+}
+
 func TestModerationService_Moderate_OpenRunner_Success(t *testing.T) {
 	// Create temporary directory for testing
 	tempDir := t.TempDir()
@@ -41,13 +48,6 @@ func TestModerationService_Moderate_OpenRunner_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			t.Logf("Recovered from panic used for ONNX init failure: %v", r)
-			t.Skip("ONNX Runtime initialization failed, skipping test")
-		}
-	}()
-
 	// Инициализируем ONNX Runtime
 	onnxinit.Initialize()
 
@@ -67,28 +67,16 @@ func TestModerationService_Moderate_OpenRunner_Success(t *testing.T) {
 }
 
 func TestModerationService_Moderate_OpenRunner_RealAssets(t *testing.T) {
-	// Инициализируем репо с перехватом паники (если нет либы)
-	defer func() {
-		if r := recover(); r != nil {
-			t.Skipf("Skipping real assets test due to initialization failure (missing lib?): %v", r)
-		}
-	}()
-
 	// Инициализируем ONNX Runtime
 	onnxinit.Initialize()
 
 	modelRunner := openrunner.New()
 
-	// Проверяем наличие модели, если её нет - пропускаем интеграционные тесты
-	if _, err := os.Stat("../assets/opennsfw2.onnx"); os.IsNotExist(err) {
-		t.Skip("Model file not found in ../assets/opennsfw2.onnx, skipping integration test")
-	}
-
 	// Директория не важна для этого теста, так как передаем полный путь
 	mediaReader := mediareader.New()
 	service := moderation.New(".", mediaReader, modelRunner)
 
-	assetsDir := "../assets"
+	assetsDir := "assets"
 	files, err := os.ReadDir(assetsDir)
 	if err != nil {
 		t.Fatalf("Failed to read assets directory: %v", err)
@@ -155,20 +143,8 @@ func TestModerationService_Moderate_ViTRunner_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			t.Logf("Recovered from panic used for ONNX init failure: %v", r)
-			t.Skip("ONNX Runtime initialization failed, skipping test")
-		}
-	}()
-
 	// Инициализируем ONNX Runtime
 	onnxinit.Initialize()
-
-	// Проверяем наличие модели ViT
-	if _, err := os.Stat("../assets/vit_nsfw.onnx"); os.IsNotExist(err) {
-		t.Skip("Model file not found in ../assets/vit_nsfw.onnx, skipping integration test")
-	}
 
 	mediaReader := mediareader.New()
 	vitRunner := vitrunner.New()
@@ -187,29 +163,17 @@ func TestModerationService_Moderate_ViTRunner_Success(t *testing.T) {
 }
 
 func TestModerationService_Moderate_ViTRunner_RealAssets(t *testing.T) {
-	// Инициализируем репо с перехватом паники (если нет либы)
-	defer func() {
-		if r := recover(); r != nil {
-			t.Skipf("Skipping ViT real assets test due to initialization failure (missing lib?): %v", r)
-		}
-	}()
-
 	// Инициализируем ONNX Runtime
 	onnxinit.Initialize()
 
 	vitRunner := vitrunner.New()
-
-	// Проверяем наличие модели, если её нет - пропускаем интеграционные тесты
-	if _, err := os.Stat("../assets/vit_nsfw.onnx"); os.IsNotExist(err) {
-		t.Skip("Model file not found in ../assets/vit_nsfw.onnx, skipping integration test")
-	}
 
 	// Директория не важна для этого теста, так как передаем полный путь
 	_ = openrunner.New() // Ensure compile
 	mediaReader := mediareader.New()
 	service := moderation.New(".", mediaReader, vitRunner)
 
-	assetsDir := "../assets"
+	assetsDir := "assets"
 	files, err := os.ReadDir(assetsDir)
 	if err != nil {
 		t.Fatalf("Failed to read assets directory: %v", err)
@@ -236,18 +200,7 @@ func TestModerationService_Moderate_ViTRunner_RealAssets(t *testing.T) {
 
 func TestModerationService_Moderate_OpenRunner_BatchProcessing(t *testing.T) {
 	// Initialize ONNX Runtime
-	defer func() {
-		if r := recover(); r != nil {
-			t.Skipf("Skipping batch processing test due to initialization failure (missing lib?): %v", r)
-		}
-	}()
-
 	onnxinit.Initialize()
-
-	// Check if model file exists
-	if _, err := os.Stat("../assets/opennsfw2.onnx"); os.IsNotExist(err) {
-		t.Skip("Model file not found in ../assets/opennsfw2.onnx, skipping integration test")
-	}
 
 	mediaReader := mediareader.New()
 	modelRunner := openrunner.New()
@@ -256,7 +209,7 @@ func TestModerationService_Moderate_OpenRunner_BatchProcessing(t *testing.T) {
 	// Prepare paths for the 7 images
 	imagePaths := make([]string, 7)
 	for i := range imagePaths {
-		imagePaths[i] = filepath.Join("../assets", fmt.Sprintf("%d.png", i+1))
+		imagePaths[i] = filepath.Join("assets", fmt.Sprintf("%d.png", i+1))
 	}
 
 	// Verify all files exist
@@ -293,18 +246,7 @@ func TestModerationService_Moderate_OpenRunner_BatchProcessing(t *testing.T) {
 
 func TestModerationService_Moderate_ViTRunner_BatchProcessing(t *testing.T) {
 	// Initialize ONNX Runtime
-	defer func() {
-		if r := recover(); r != nil {
-			t.Skipf("Skipping ViT batch processing test due to initialization failure (missing lib?): %v", r)
-		}
-	}()
-
 	onnxinit.Initialize()
-
-	// Check if model file exists
-	if _, err := os.Stat("../assets/vit_nsfw.onnx"); os.IsNotExist(err) {
-		t.Skip("Model file not found in ../assets/vit_nsfw.onnx, skipping integration test")
-	}
 
 	mediaReader := mediareader.New()
 	vitRunner := vitrunner.New()
@@ -313,7 +255,7 @@ func TestModerationService_Moderate_ViTRunner_BatchProcessing(t *testing.T) {
 	// Prepare paths for the 7 images
 	imagePaths := make([]string, 7)
 	for i := range imagePaths {
-		imagePaths[i] = filepath.Join("../assets", fmt.Sprintf("%d.png", i+1))
+		imagePaths[i] = filepath.Join("assets", fmt.Sprintf("%d.png", i+1))
 	}
 
 	// Verify all files exist
@@ -350,18 +292,7 @@ func TestModerationService_Moderate_ViTRunner_BatchProcessing(t *testing.T) {
 
 func BenchmarkModerationService_Moderate_OpenRunner_BatchProcessing120(b *testing.B) {
 	// Initialize ONNX Runtime
-	defer func() {
-		if r := recover(); r != nil {
-			b.Skipf("Skipping batch processing benchmark due to initialization failure (missing lib?): %v", r)
-		}
-	}()
-
 	onnxinit.Initialize()
-
-	// Check if model file exists
-	if _, err := os.Stat("../assets/opennsfw2.onnx"); os.IsNotExist(err) {
-		b.Skip("Model file not found in ../assets/opennsfw2.onnx, skipping integration test")
-	}
 
 	mediaReader := mediareader.New()
 	modelRunner := openrunner.New()
@@ -371,7 +302,7 @@ func BenchmarkModerationService_Moderate_OpenRunner_BatchProcessing120(b *testin
 	imagePaths := make([]string, 120)
 	for i := 0; i < 120; i++ {
 		imgNum := (i % 7) + 1 // Cycle through images 1-7
-		imagePaths[i] = filepath.Join("../assets", fmt.Sprintf("%d.png", imgNum))
+		imagePaths[i] = filepath.Join("assets", fmt.Sprintf("%d.png", imgNum))
 	}
 
 	// Verify all files exist
@@ -395,18 +326,7 @@ func BenchmarkModerationService_Moderate_OpenRunner_BatchProcessing120(b *testin
 
 func BenchmarkModerationService_Moderate_ViTRunner_BatchProcessing120(b *testing.B) {
 	// Initialize ONNX Runtime
-	defer func() {
-		if r := recover(); r != nil {
-			b.Skipf("Skipping ViT batch processing benchmark due to initialization failure (missing lib?): %v", r)
-		}
-	}()
-
 	onnxinit.Initialize()
-
-	// Check if model file exists
-	if _, err := os.Stat("../assets/vit_nsfw.onnx"); os.IsNotExist(err) {
-		b.Skip("Model file not found in ../assets/vit_nsfw.onnx, skipping integration test")
-	}
 
 	mediaReader := mediareader.New()
 	vitRunner := vitrunner.New()
@@ -416,7 +336,7 @@ func BenchmarkModerationService_Moderate_ViTRunner_BatchProcessing120(b *testing
 	imagePaths := make([]string, 120)
 	for i := 0; i < 120; i++ {
 		imgNum := (i % 7) + 1 // Cycle through images 1-7
-		imagePaths[i] = filepath.Join("../assets", fmt.Sprintf("%d.png", imgNum))
+		imagePaths[i] = filepath.Join("assets", fmt.Sprintf("%d.png", imgNum))
 	}
 
 	// Verify all files exist
@@ -439,28 +359,16 @@ func BenchmarkModerationService_Moderate_ViTRunner_BatchProcessing120(b *testing
 }
 
 func TestModerationService_Moderate_OpenRunner_RealVideoAssets(t *testing.T) {
-	// Инициализируем репо с перехватом паники (если нет либы)
-	defer func() {
-		if r := recover(); r != nil {
-			t.Skipf("Skipping real video assets test due to initialization failure (missing lib?): %v", r)
-		}
-	}()
-
 	// Инициализируем ONNX Runtime
 	onnxinit.Initialize()
 
 	modelRunner := openrunner.New()
 
-	// Проверяем наличие модели, если её нет - пропускаем интеграционные тесты
-	if _, err := os.Stat("../assets/opennsfw2.onnx"); os.IsNotExist(err) {
-		t.Skip("Model file not found in ../assets/opennsfw2.onnx, skipping integration test")
-	}
-
 	// Директория не важна для этого теста, так как передаем полный путь
 	mediaReader := mediareader.New()
 	service := moderation.New(".", mediaReader, modelRunner)
 
-	videoFiles := []string{"../assets/video1.mp4", "../assets/video2.mp4"}
+	videoFiles := []string{"assets/video1.mp4", "assets/video2.mp4"}
 
 	for _, videoPath := range videoFiles {
 		// Проверяем существование видеофайла
@@ -482,29 +390,17 @@ func TestModerationService_Moderate_OpenRunner_RealVideoAssets(t *testing.T) {
 }
 
 func TestModerationService_Moderate_ViTRunner_RealVideoAssets(t *testing.T) {
-	// Инициализируем репо с перехватом паники (если нет либы)
-	defer func() {
-		if r := recover(); r != nil {
-			t.Skipf("Skipping ViT real video assets test due to initialization failure (missing lib?): %v", r)
-		}
-	}()
-
 	// Инициализируем ONNX Runtime
 	onnxinit.Initialize()
 
 	vitRunner := vitrunner.New()
-
-	// Проверяем наличие модели, если её нет - пропускаем интеграционные тесты
-	if _, err := os.Stat("../assets/vit_nsfw.onnx"); os.IsNotExist(err) {
-		t.Skip("Model file not found in ../assets/vit_nsfw.onnx, skipping integration test")
-	}
 
 	// Директория не важна для этого теста, так как передаем полный путь
 	_ = openrunner.New() // Ensure compile
 	mediaReader := mediareader.New()
 	service := moderation.New(".", mediaReader, vitRunner)
 
-	videoFiles := []string{"../assets/video1.mp4", "../assets/video2.mp4"}
+	videoFiles := []string{"assets/video1.mp4", "assets/video2.mp4"}
 
 	for _, videoPath := range videoFiles {
 		// Проверяем существование видеофайла

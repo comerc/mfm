@@ -16,21 +16,16 @@ type Repo struct {
 
 // New создает новый экземпляр репозитория моделей
 func New() *Repo {
+
 	// Путь к модели
 	modelPath := filepath.Join("assets", "opennsfw2.onnx")
 
 	// Проверяем существование модели
 	if _, err := os.Stat(modelPath); os.IsNotExist(err) {
-		// Try parent directory (for tests)
-		parentPath := filepath.Join("..", "assets", "opennsfw2.onnx")
-		if _, err := os.Stat(parentPath); err == nil {
-			modelPath = parentPath
-		} else {
-			// Модель не найдена, используем mock
-			fmt.Printf("openrunner: Model not found at %s or %s, using mock.\n", modelPath, parentPath)
-			return &Repo{
-				session: nil,
-			}
+		// Модель не найдена, используем mock
+		fmt.Printf("openrunner: Model not found at %s, using mock.\n", modelPath)
+		return &Repo{
+			session: nil,
 		}
 	}
 
