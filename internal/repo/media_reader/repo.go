@@ -13,6 +13,15 @@ import (
 	"strings"
 )
 
+// ContentType represents the type of media content
+type ContentType int
+
+const (
+	contentTypeUnknown ContentType = iota
+	contentTypeImage
+	contentTypeVideo
+)
+
 type Repo struct {
 }
 
@@ -22,8 +31,9 @@ func New() *Repo {
 }
 
 func (s *Repo) Read(filePath string) ([][]byte, error) {
-	// Check file first
-	if err := s.check(filePath); err != nil {
+	// Check file first and get content type
+	contentType, err := s.check(filePath)
+	if err != nil {
 		return nil, err
 	}
 
@@ -39,17 +49,14 @@ func (s *Repo) Read(filePath string) ([][]byte, error) {
 		return nil, fmt.Errorf("error reading file: %w", err)
 	}
 
-	contentType := http.DetectContentType(data)
-
-	if strings.HasPrefix(contentType, "image/") {
+	switch contentType {
+	case contentTypeImage:
 		return s.processImage(data)
-	}
-
-	if strings.HasPrefix(contentType, "video/") {
+	case contentTypeVideo:
 		return s.processVideo(filePath)
+	default:
+		return nil, fmt.Errorf("unsupported content type: %d", contentType)
 	}
-
-	return nil, fmt.Errorf("unsupported content type: %s", contentType)
 }
 
 func (s *Repo) processVideo(filePath string) ([][]byte, error) {
@@ -139,14 +146,14 @@ func (s *Repo) processImage(data []byte) ([][]byte, error) {
 }
 
 // Check if file exists and has supported extension/type
-func (s *Repo) check(filePath string) error {
+func (s *Repo) check(filePath string) (ContentType, error) {
 	// Check if file exists
 	file, err := os.Open(filePath)
 	if os.IsNotExist(err) {
-		return fmt.Errorf("file not found: %s", filePath)
+		return contentTypeUnknown, fmt.Errorf("file not found: %s", filePath)
 	}
 	if err != nil {
-		return fmt.Errorf("unable to open file: %w", err)
+		return contentTypeUnknown, fmt.Errorf("unable to open file: %w", err)
 	}
 	defer file.Close()
 
@@ -154,18 +161,21 @@ func (s *Repo) check(filePath string) error {
 	buffer := make([]byte, 512)
 	n, err := file.Read(buffer)
 	if err != nil && n == 0 {
-		return fmt.Errorf("unable to read file: %w", err)
+		return contentTypeUnknown, fmt.Errorf("unable to read file: %w", err)
 	}
 
 	// Detect content type
 	contentType := http.DetectContentType(buffer[:n])
 
 	// Check if it's an image or video type
-	if strings.HasPrefix(contentType, "image/") || strings.HasPrefix(contentType, "video/") {
-		return nil
+	if strings.HasPrefix(contentType, "image/") {
+		return contentTypeImage, nil
+	}
+	if strings.HasPrefix(contentType, "video/") {
+		return contentTypeVideo, nil
 	}
 
-	return fmt.Errorf("unsupported file type: %s", contentType)
+	return contentTypeUnknown, fmt.Errorf("unsupported file type: %s", contentType)
 }
 
 // Simple nearest-neighbor resize
