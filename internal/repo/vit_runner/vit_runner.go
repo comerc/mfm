@@ -96,7 +96,9 @@ func (r *Repo) Infer(frames [][]byte) ([]float32, error) {
 	if err != nil {
 		return []float32{}, fmt.Errorf("failed to create input tensor: %v", err)
 	}
-	defer inputTensor.Destroy()
+	defer func() {
+		_ = inputTensor.Destroy()
+	}()
 
 	// Выполняем инференс
 	outputs := []onnxruntime_go.Value{nil}
@@ -104,7 +106,9 @@ func (r *Repo) Infer(frames [][]byte) ([]float32, error) {
 	if err != nil {
 		return []float32{}, fmt.Errorf("inference failed: %v", err)
 	}
-	defer outputs[0].Destroy()
+	defer func() {
+		_ = outputs[0].Destroy()
+	}()
 
 	// Получаем результат
 	outputData := outputs[0].(*onnxruntime_go.Tensor[float32]).GetData()

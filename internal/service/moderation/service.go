@@ -45,7 +45,7 @@ func (s *Service) ModerateOne(filePath string) (float32, error) {
 
 // ModerateImages обрабатывает только картинки в пакете
 func (s *Service) ModerateImages(filePaths []string) ([]float32, error) {
-	var data [][]byte
+	data := make([][]byte, 0, len(filePaths))
 
 	for _, filePath := range filePaths {
 		fileFrames, err := s.mediaReader.Read(filePath)

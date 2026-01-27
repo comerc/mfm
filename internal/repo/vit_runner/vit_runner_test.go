@@ -36,11 +36,12 @@ func TestRepo_Infer(t *testing.T) {
 	}
 
 	// With mock implementation (session=nil), scores should be empty or contain zeros
-	if len(scores) == 0 {
+	switch {
+	case len(scores) == 0:
 		// This is expected when session is nil
-	} else if len(scores) != 1 {
+	case len(scores) != 1:
 		t.Errorf("expected 1 score, got %d", len(scores))
-	} else if scores[0] != 0.0 {
+	case scores[0] != 0.0:
 		t.Errorf("expected score of 0.0, got %f", scores[0])
 	}
 }

@@ -69,7 +69,7 @@ func TestService_Read_UnsupportedType(t *testing.T) {
 	testFile := filepath.Join(tempDir, "test.txt")
 
 	// Create a file with invalid content
-	err := os.WriteFile(testFile, []byte("this is not an image"), 0644)
+	err := os.WriteFile(testFile, []byte("this is not an image"), 0600)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -135,9 +135,10 @@ func (s *Repo) processImage(data []byte) ([][]byte, error) {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			r, g, b, _ := resized.At(x, y).RGBA()
 			// RGBA returns values in [0, 65535], we need [0, 255]
-			rgbData[idx] = uint8(r >> 8)
-			rgbData[idx+1] = uint8(g >> 8)
-			rgbData[idx+2] = uint8(b >> 8)
+			// Safe conversion from uint32 to uint8
+			rgbData[idx] = uint8(r / 257)   // #nosec G115 - safe conversion, values are in [0, 65535] range
+			rgbData[idx+1] = uint8(g / 257) // #nosec G115 - safe conversion, values are in [0, 65535] range
+			rgbData[idx+2] = uint8(b / 257) // #nosec G115 - safe conversion, values are in [0, 65535] range
 			idx += 3
 		}
 	}
