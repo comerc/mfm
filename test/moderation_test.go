@@ -53,7 +53,7 @@ func TestModerationService_Moderate_OpenRunner_Success(t *testing.T) {
 	mediaReader := mediareader.New()
 	modelRunner := openrunner.New()
 	service := moderation.New(tempDir, mediaReader, modelRunner)
-	result := service.Moderate(testFile)
+	result := service.Moderate([]string{testFile})
 
 	if result.Error != "" {
 		t.Errorf("expected no error, got %s", result.Error)
@@ -99,8 +99,8 @@ func TestModerationService_Moderate_OpenRunner_RealAssets(t *testing.T) {
 		}
 
 		t.Run(f.Name(), func(t *testing.T) {
-			fullPath := filepath.Join(assetsDir, f.Name())
-			result := service.Moderate(fullPath)
+			filePath := filepath.Join(assetsDir, f.Name())
+			result := service.Moderate([]string{filePath})
 
 			if result.Error != "" {
 				t.Fatalf("Processing failed for %s: %s", f.Name(), result.Error)
@@ -122,7 +122,7 @@ func TestModerationService_Moderate_FileNotFound(t *testing.T) {
 	service := moderation.New(tempDir, mediaReader, modelRunner)
 
 	nonExistentFile := filepath.Join(tempDir, "nonexistent.png")
-	result := service.Moderate(nonExistentFile)
+	result := service.Moderate([]string{nonExistentFile})
 
 	if result.Error == "" {
 		t.Error("expected error for non-existent file")
@@ -175,7 +175,7 @@ func TestModerationService_Moderate_ViTRunner_Success(t *testing.T) {
 	mediaReader := mediareader.New()
 	vitRunner := vitrunner.New()
 	service := moderation.New(tempDir, mediaReader, vitRunner)
-	result := service.Moderate(testFile)
+	result := service.Moderate([]string{testFile})
 
 	if result.Error != "" {
 		t.Errorf("expected no error, got %s", result.Error)
@@ -230,7 +230,7 @@ func TestModerationService_Moderate_ViTRunner_RealAssets(t *testing.T) {
 
 		t.Run(f.Name(), func(t *testing.T) {
 			fullPath := filepath.Join(assetsDir, f.Name())
-			result := service.Moderate(fullPath)
+			result := service.Moderate([]string{fullPath})
 
 			if result.Error != "" {
 				t.Fatalf("Processing failed for %s: %s", f.Name(), result.Error)

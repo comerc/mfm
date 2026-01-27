@@ -31,17 +31,20 @@ func New(uploadDir string, mediaReader MediaReader, modelRunner ModelRunner) *Se
 }
 
 // Moderate analyzes the file with the given filePath for NSFW content
-func (s *Service) Moderate(filePath string) domain.ModerationResult {
-	frames, err := s.mediaReader.Read(filePath)
-
-	if err != nil {
-		return domain.ModerationResult{
-			Error: err.Error(),
+func (s *Service) Moderate(filePaths []string) domain.ModerationResult {
+	var allFrames [][]byte
+	for _, filePath := range filePaths {
+		oneFileFrames, err := s.mediaReader.Read(filePath)
+		if err != nil {
+			return domain.ModerationResult{
+				Error: err.Error(),
+			}
 		}
+		allFrames = append(allFrames, oneFileFrames...)
 	}
 
 	// Run inference via ModelRunner
-	result, err := s.modelRunner.Infer(frames)
+	result, err := s.modelRunner.Infer(allFrames)
 	if err != nil {
 		return domain.ModerationResult{
 			Error: fmt.Sprintf("inference failed: %v", err),
