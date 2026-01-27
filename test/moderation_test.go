@@ -354,3 +354,87 @@ func TestModerationService_Moderate_ViTRunner_BatchProcessing(t *testing.T) {
 
 	t.Logf("ViT Batch Processing Result - Scores: %v", scores)
 }
+
+func BenchmarkModerationService_Moderate_OpenRunner_BatchProcessing120(b *testing.B) {
+	// Initialize ONNX Runtime
+	defer func() {
+		if r := recover(); r != nil {
+			b.Skipf("Skipping batch processing benchmark due to initialization failure (missing lib?): %v", r)
+		}
+	}()
+
+	onnxinit.Initialize()
+
+	// Check if model file exists
+	if _, err := os.Stat("../assets/opennsfw2.onnx"); os.IsNotExist(err) {
+		b.Skip("Model file not found in ../assets/opennsfw2.onnx, skipping integration test")
+	}
+
+	mediaReader := mediareader.New()
+	modelRunner := openrunner.New()
+	service := moderation.New(".", mediaReader, modelRunner)
+
+	// Prepare paths for 120 images by repeating the 7 available images
+	imagePaths := make([]string, 120)
+	for i := 0; i < 120; i++ {
+		imgNum := (i % 7) + 1 // Cycle through images 1-7
+		imagePaths[i] = filepath.Join("../assets", fmt.Sprintf("%d.png", imgNum))
+	}
+
+	// Verify all files exist
+	for _, path := range imagePaths {
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			b.Fatalf("Required test image does not exist: %s", path)
+		}
+	}
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		scores := service.Moderate(imagePaths)
+		if len(scores) != len(imagePaths) {
+			b.Fatalf("Expected %d scores, got %d", len(imagePaths), len(scores))
+		}
+	}
+}
+
+func BenchmarkModerationService_Moderate_ViTRunner_BatchProcessing120(b *testing.B) {
+	// Initialize ONNX Runtime
+	defer func() {
+		if r := recover(); r != nil {
+			b.Skipf("Skipping ViT batch processing benchmark due to initialization failure (missing lib?): %v", r)
+		}
+	}()
+
+	onnxinit.Initialize()
+
+	// Check if model file exists
+	if _, err := os.Stat("../assets/vit_nsfw.onnx"); os.IsNotExist(err) {
+		b.Skip("Model file not found in ../assets/vit_nsfw.onnx, skipping integration test")
+	}
+
+	mediaReader := mediareader.New()
+	vitRunner := vitrunner.New()
+	service := moderation.New(".", mediaReader, vitRunner)
+
+	// Prepare paths for 120 images by repeating the 7 available images
+	imagePaths := make([]string, 120)
+	for i := 0; i < 120; i++ {
+		imgNum := (i % 7) + 1 // Cycle through images 1-7
+		imagePaths[i] = filepath.Join("../assets", fmt.Sprintf("%d.png", imgNum))
+	}
+
+	// Verify all files exist
+	for _, path := range imagePaths {
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			b.Fatalf("Required test image does not exist: %s", path)
+		}
+	}
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		scores := service.Moderate(imagePaths)
+		if len(scores) != len(imagePaths) {
+			b.Fatalf("Expected %d scores, got %d", len(imagePaths), len(scores))
+		}
+	}
+}

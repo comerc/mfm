@@ -1,0 +1,22 @@
+version: '3'
+
+tasks:
+  bench:
+    desc: "Run all benchmarks"
+    cmds:
+      - go test -bench=. -run=^$ ./test/
+
+  bench-mem:
+    desc: "Run all benchmarks with memory profiling"
+    cmds:
+      - go test -bench=. -run=^$ -benchmem ./test/
+
+  test:
+    desc: "Run all tests"
+    cmds:
+      - go test ./test/...
+
+  test-verbose:
+    desc: "Run all tests with verbose output"
+    cmds:
+      - go test -v ./test/...
