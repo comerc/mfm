@@ -24,35 +24,37 @@ func New(uploadDir string, mediaReader MediaReader, modelRunner ModelRunner) *Se
 	}
 }
 
-// Moderate analyzes the file with the given filePath for NSFW content
-func (s *Service) Moderate(filePaths []string) []float32 {
-	scores := make([]float32, 0, len(filePaths))
+// ModerateOne обрабатывает один файл (картинку или видосик)
+func (s *Service) ModerateOne(filePath string) (float32, error) {
+	data, err := s.mediaReader.Read(filePath)
+	if err != nil {
+		return 0.0, err
+	}
+	frameScores, err := s.modelRunner.Infer(data)
+	if err != nil {
+		return 0.0, err
+	}
+	var maxScore float32
+	for _, score := range frameScores {
+		if score > maxScore {
+			maxScore = score
+		}
+	}
+	return maxScore, nil
+}
+
+// ModerateImages обрабатывает только картинки в пакете
+func (s *Service) ModerateImages(filePaths []string) ([]float32, error) {
+	var data [][]byte
 
 	for _, filePath := range filePaths {
-		oneFileFrames, err := s.mediaReader.Read(filePath)
+		fileFrames, err := s.mediaReader.Read(filePath)
 		if err != nil {
-			// В случае ошибки чтения файла, добавляем нулевую оценку
-			scores = append(scores, 0.0)
-			continue
+			return nil, err
 		}
 
-		// Run inference via ModelRunner для каждого файла отдельно
-		frameScores, err := s.modelRunner.Infer(oneFileFrames)
-		if err != nil {
-			// В случае ошибки инференса, добавляем нулевую оценку
-			scores = append(scores, 0.0)
-			continue
-		}
-
-		// Берем максимальную оценку из всех кадров файла
-		var maxScore float32
-		for _, score := range frameScores {
-			if score > maxScore {
-				maxScore = score
-			}
-		}
-		scores = append(scores, maxScore)
+		data = append(data, fileFrames[0])
 	}
 
-	return scores
+	return s.modelRunner.Infer(data)
 }

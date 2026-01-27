@@ -54,17 +54,15 @@ func TestModerationService_Moderate_OpenRunner_Success(t *testing.T) {
 	mediaReader := mediareader.New()
 	modelRunner := openrunner.New()
 	service := moderation.New(tempDir, mediaReader, modelRunner)
-	scores := service.Moderate([]string{testFile})
+	score, err := service.ModerateOne(testFile)
 
-	// Проверяем, что получен хотя бы один результат
-	if len(scores) == 0 {
-		t.Errorf("expected at least one score, got none")
-	} else {
-		score := scores[0]
-		// Simple red image should not be NSFW, so score should be low
-		if score > 0.5 {
-			t.Errorf("expected score <= 0.5 for simple red image, got %f", score)
-		}
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Simple red image should not be NSFW, so score should be low
+	if score > 0.5 {
+		t.Errorf("expected score <= 0.5 for simple red image, got %f", score)
 	}
 }
 
@@ -103,13 +101,12 @@ func TestModerationService_Moderate_OpenRunner_RealAssets(t *testing.T) {
 
 		t.Run(f.Name(), func(t *testing.T) {
 			filePath := filepath.Join(assetsDir, f.Name())
-			scores := service.Moderate([]string{filePath})
+			score, err := service.ModerateOne(filePath)
 
-			if len(scores) == 0 {
-				t.Fatalf("Processing failed for %s: no scores returned", f.Name())
+			if err != nil {
+				t.Error(err)
 			}
 
-			score := scores[0]
 			isNSFW := score > 0.5 // Предполагаем порог 0.5 для определения NSFW
 			t.Logf("Image: %s, IsNSFW: %v, Score: %.4f", f.Name(), isNSFW, score)
 		})
@@ -127,13 +124,10 @@ func TestModerationService_Moderate_FileNotFound(t *testing.T) {
 	service := moderation.New(tempDir, mediaReader, modelRunner)
 
 	nonExistentFile := filepath.Join(tempDir, "nonexistent.png")
-	scores := service.Moderate([]string{nonExistentFile})
+	_, err := service.ModerateOne(nonExistentFile)
 
-	// Ожидаем, что для несуществующего файла будет возвращена пустая оценка или нулевая оценка
-	if len(scores) == 0 {
-		t.Error("expected at least one score (even if zero) for non-existent file")
-	} else if scores[0] != 0.0 {
-		t.Errorf("expected score of 0.0 for non-existent file, got %f", scores[0])
+	if err == nil || !strings.Contains(err.Error(), "file not found:") {
+		t.Error("invalid error")
 	}
 }
 
@@ -179,22 +173,16 @@ func TestModerationService_Moderate_ViTRunner_Success(t *testing.T) {
 	mediaReader := mediareader.New()
 	vitRunner := vitrunner.New()
 	service := moderation.New(tempDir, mediaReader, vitRunner)
-	scores := service.Moderate([]string{testFile})
+	score, err := service.ModerateOne(testFile)
 
-	// Проверяем, что получен хотя бы один результат
-	if len(scores) == 0 {
-		t.Errorf("expected at least one score, got none")
-	} else {
-		score := scores[0]
-		// Simple red image should not be NSFW, so score should be low
-		if score > 0.5 {
-			t.Errorf("expected score <= 0.5 for simple red image, got %f", score)
-		}
+	if err != nil {
+		t.Error(err)
 	}
 
-	// Log the results for verification
-	// Получаем оценку из результата
-	score := scores[0]
+	if score > 0.5 {
+		t.Errorf("expected score <= 0.5 for simple red image, got %f", score)
+	}
+
 	t.Logf("ViT Result - IsNSFW: %v, Score: %.4f", score > 0.5, score)
 }
 
@@ -234,13 +222,12 @@ func TestModerationService_Moderate_ViTRunner_RealAssets(t *testing.T) {
 
 		t.Run(f.Name(), func(t *testing.T) {
 			fullPath := filepath.Join(assetsDir, f.Name())
-			scores := service.Moderate([]string{fullPath})
+			score, err := service.ModerateOne(fullPath)
 
-			if len(scores) == 0 {
-				t.Fatalf("Processing failed for %s: no scores returned", f.Name())
+			if err != nil {
+				t.Error(err)
 			}
 
-			score := scores[0]
 			isNSFW := score > 0.5 // Предполагаем порог 0.5 для определения NSFW
 			t.Logf("Image: %s, IsNSFW: %v, Score: %.4f", f.Name(), isNSFW, score)
 		})
@@ -280,7 +267,10 @@ func TestModerationService_Moderate_OpenRunner_BatchProcessing(t *testing.T) {
 	}
 
 	// Test batch processing with all 7 images
-	scores := service.Moderate(imagePaths)
+	scores, err := service.ModerateImages(imagePaths)
+	if err != nil {
+		t.Error(err)
+	}
 
 	if len(scores) == 0 {
 		t.Fatalf("Batch processing failed: no scores returned")
@@ -334,7 +324,10 @@ func TestModerationService_Moderate_ViTRunner_BatchProcessing(t *testing.T) {
 	}
 
 	// Test batch processing with all 7 images
-	scores := service.Moderate(imagePaths)
+	scores, err := service.ModerateImages(imagePaths)
+	if err != nil {
+		t.Error(err)
+	}
 
 	if len(scores) == 0 {
 		t.Fatalf("Batch processing failed: no scores returned")
@@ -390,7 +383,10 @@ func BenchmarkModerationService_Moderate_OpenRunner_BatchProcessing120(b *testin
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		scores := service.Moderate(imagePaths)
+		scores, err := service.ModerateImages(imagePaths)
+		if err != nil {
+			b.Error(err)
+		}
 		if len(scores) != len(imagePaths) {
 			b.Fatalf("Expected %d scores, got %d", len(imagePaths), len(scores))
 		}
@@ -432,7 +428,10 @@ func BenchmarkModerationService_Moderate_ViTRunner_BatchProcessing120(b *testing
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		scores := service.Moderate(imagePaths)
+		scores, err := service.ModerateImages(imagePaths)
+		if err != nil {
+			b.Error(err)
+		}
 		if len(scores) != len(imagePaths) {
 			b.Fatalf("Expected %d scores, got %d", len(imagePaths), len(scores))
 		}
@@ -471,13 +470,11 @@ func TestModerationService_Moderate_OpenRunner_RealVideoAssets(t *testing.T) {
 		}
 
 		t.Run(filepath.Base(videoPath), func(t *testing.T) {
-			scores := service.Moderate([]string{videoPath})
-
-			if len(scores) == 0 {
-				t.Fatalf("Processing failed for %s: no scores returned", filepath.Base(videoPath))
+			score, err := service.ModerateOne(videoPath)
+			if err != nil {
+				t.Error(err)
 			}
 
-			score := scores[0]
 			isNSFW := score > 0.5 // Предполагаем порог 0.5 для определения NSFW
 			t.Logf("Video: %s, IsNSFW: %v, Score: %.4f", filepath.Base(videoPath), isNSFW, score)
 		})
@@ -517,13 +514,11 @@ func TestModerationService_Moderate_ViTRunner_RealVideoAssets(t *testing.T) {
 		}
 
 		t.Run(filepath.Base(videoPath), func(t *testing.T) {
-			scores := service.Moderate([]string{videoPath})
-
-			if len(scores) == 0 {
-				t.Fatalf("Processing failed for %s: no scores returned", filepath.Base(videoPath))
+			score, err := service.ModerateOne(videoPath)
+			if err != nil {
+				t.Error(err)
 			}
 
-			score := scores[0]
 			isNSFW := score > 0.5 // Предполагаем порог 0.5 для определения NSFW
 			t.Logf("Video: %s, IsNSFW: %v, Score: %.4f", filepath.Base(videoPath), isNSFW, score)
 		})
