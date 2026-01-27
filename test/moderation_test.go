@@ -1,6 +1,7 @@
 package test
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
@@ -242,5 +243,99 @@ func TestModerationService_Moderate_ViTRunner_RealAssets(t *testing.T) {
 
 			t.Logf("Image: %s, IsNSFW: %v, Score: %.4f", f.Name(), result.IsNSFW, result.Score)
 		})
+	}
+}
+
+func TestModerationService_Moderate_OpenRunner_BatchProcessing(t *testing.T) {
+	// Initialize ONNX Runtime
+	defer func() {
+		if r := recover(); r != nil {
+			t.Skipf("Skipping batch processing test due to initialization failure (missing lib?): %v", r)
+		}
+	}()
+
+	onnxinit.Initialize()
+
+	// Check if model file exists
+	if _, err := os.Stat("../assets/opennsfw2.onnx"); os.IsNotExist(err) {
+		t.Skip("Model file not found in ../assets/opennsfw2.onnx, skipping integration test")
+	}
+
+	mediaReader := mediareader.New()
+	modelRunner := openrunner.New()
+	service := moderation.New(".", mediaReader, modelRunner)
+
+	// Prepare paths for the 7 images
+	imagePaths := make([]string, 7)
+	for i := 1; i <= 7; i++ {
+		imagePaths[i-1] = filepath.Join("../assets", fmt.Sprintf("%d.png", i))
+	}
+
+	// Verify all files exist
+	for _, path := range imagePaths {
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			t.Fatalf("Required test image does not exist: %s", path)
+		}
+	}
+
+	// Test batch processing with all 7 images
+	result := service.Moderate(imagePaths)
+
+	if result.Error != "" {
+		t.Fatalf("Batch processing failed: %s", result.Error)
+	}
+
+	t.Logf("Batch Processing Result - IsNSFW: %v, Score: %.4f", result.IsNSFW, result.Score)
+
+	// Basic validation that we got a reasonable result
+	if result.Score < 0.0 || result.Score > 1.0 {
+		t.Errorf("Expected score between 0.0 and 1.0, got: %.4f", result.Score)
+	}
+}
+
+func TestModerationService_Moderate_ViTRunner_BatchProcessing(t *testing.T) {
+	// Initialize ONNX Runtime
+	defer func() {
+		if r := recover(); r != nil {
+			t.Skipf("Skipping ViT batch processing test due to initialization failure (missing lib?): %v", r)
+		}
+	}()
+
+	onnxinit.Initialize()
+
+	// Check if model file exists
+	if _, err := os.Stat("../assets/vit_nsfw.onnx"); os.IsNotExist(err) {
+		t.Skip("Model file not found in ../assets/vit_nsfw.onnx, skipping integration test")
+	}
+
+	mediaReader := mediareader.New()
+	vitRunner := vitrunner.New()
+	service := moderation.New(".", mediaReader, vitRunner)
+
+	// Prepare paths for the 7 images
+	imagePaths := make([]string, 7)
+	for i := 1; i <= 7; i++ {
+		imagePaths[i-1] = filepath.Join("../assets", fmt.Sprintf("%d.png", i))
+	}
+
+	// Verify all files exist
+	for _, path := range imagePaths {
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			t.Fatalf("Required test image does not exist: %s", path)
+		}
+	}
+
+	// Test batch processing with all 7 images
+	result := service.Moderate(imagePaths)
+
+	if result.Error != "" {
+		t.Fatalf("Batch processing failed: %s", result.Error)
+	}
+
+	t.Logf("ViT Batch Processing Result - IsNSFW: %v, Score: %.4f", result.IsNSFW, result.Score)
+
+	// Basic validation that we got a reasonable result
+	if result.Score < 0.0 || result.Score > 1.0 {
+		t.Errorf("Expected score between 0.0 and 1.0, got: %.4f", result.Score)
 	}
 }

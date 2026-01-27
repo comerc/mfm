@@ -102,16 +102,13 @@ func (r *Repo) Infer(frames [][]byte) (domain.ModerationResult, error) {
 		if score > maxScore {
 			maxScore = score
 		}
-		if score > 0.8 { // Поднимаем порог до 0.8 для большей уверенности
-			return domain.ModerationResult{
-				IsNSFW: true,
-				Score:  score,
-			}, nil
-		}
 	}
 
+	// Определяем, является ли контент NSFW на основе максимальной вероятности NSFW (>0.5)
+	isNSFW := maxScore > 0.5
+
 	return domain.ModerationResult{
-		IsNSFW: false,
-		Score:  maxScore,
+		IsNSFW: isNSFW,
+		Score:  maxScore, // Используем максимальную вероятность NSFW как основной Score
 	}, nil
 }

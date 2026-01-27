@@ -115,20 +115,26 @@ func (r *Repo) Infer(frames [][]byte) (domain.ModerationResult, error) {
 	// Получаем результат
 	outputData := outputs[0].(*onnxruntime_go.Tensor[float32]).GetData()
 
-	// Результат содержит два значения: [normal_prob, nsfw_prob]
-	// Индекс 0 - вероятность нормального контента, индекс 1 - вероятность NSFW
-	if len(outputData) < 2 {
-		return domain.ModerationResult{}, errors.New("unexpected output length from model")
+	// Результат содержит пары значений: [normal_prob, nsfw_prob, normal_prob, nsfw_prob, ...] для каждого кадра в пакете
+	expectedLength := batchSize * 2 // 2 значения для каждого кадра
+	if len(outputData) != expectedLength {
+		return domain.ModerationResult{}, fmt.Errorf("unexpected output length from model: got %d, expected %d", len(outputData), expectedLength)
 	}
 
-	_ = outputData[0] // normal probability (not used directly)
-	nsfwProb := outputData[1]
+	var maxScore float32
+	// Проходим по всем парам значений (normal_prob, nsfw_prob) для каждого кадра
+	for i := 0; i < batchSize; i++ {
+		nsfwProb := outputData[i*2+1] // индекс 1, 3, 5, ... - вероятности NSFW для каждого кадра
+		if nsfwProb > maxScore {
+			maxScore = nsfwProb
+		}
+	}
 
-	// Определяем, является ли контент NSFW на основе вероятности NSFW (>0.5)
-	isNSFW := nsfwProb > 0.5
+	// Определяем, является ли контент NSFW на основе максимальной вероятности NSFW (>0.5)
+	isNSFW := maxScore > 0.5
 
 	return domain.ModerationResult{
 		IsNSFW: isNSFW,
-		Score:  nsfwProb, // Используем вероятность NSFW как основной Score, как в эталонной реализации
+		Score:  maxScore, // Используем максимальную вероятность NSFW как основной Score
 	}, nil
 }
