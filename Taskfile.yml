@@ -1,6 +1,31 @@
 version: '3'
 
 tasks:
+  default:
+    # Эта задача выполняется по умолчанию при вызове 'task' без аргументов.
+    # Она скрыта из списка, так как у нее нет 'desc'.
+    cmds:
+      - task --list
+      - echo "task <name> --summary"
+    silent: true
+
+  mod:
+    desc: "Sync go.mod"
+    cmds:
+      - go mod download
+      - go mod tidy
+
+  lint:
+    desc: "Run linters"
+    summary: |
+      Run linters.
+    cmds:
+      - GOEXPERIMENT=synctest golangci-lint run
+      - GOEXPERIMENT=synctest unused-interface-methods ./...
+      - GOEXPERIMENT=synctest error-log-or-return ./...
+
+    silent: true
+
   bench:
     desc: "Run all benchmarks"
     cmds:
