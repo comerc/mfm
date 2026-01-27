@@ -268,8 +268,8 @@ func TestModerationService_Moderate_OpenRunner_BatchProcessing(t *testing.T) {
 
 	// Prepare paths for the 7 images
 	imagePaths := make([]string, 7)
-	for i := 1; i <= 7; i++ {
-		imagePaths[i-1] = filepath.Join("../assets", fmt.Sprintf("%d.png", i))
+	for i := range imagePaths {
+		imagePaths[i] = filepath.Join("../assets", fmt.Sprintf("%d.png", i+1))
 	}
 
 	// Verify all files exist
@@ -322,8 +322,8 @@ func TestModerationService_Moderate_ViTRunner_BatchProcessing(t *testing.T) {
 
 	// Prepare paths for the 7 images
 	imagePaths := make([]string, 7)
-	for i := 1; i <= 7; i++ {
-		imagePaths[i-1] = filepath.Join("../assets", fmt.Sprintf("%d.png", i))
+	for i := range imagePaths {
+		imagePaths[i] = filepath.Join("../assets", fmt.Sprintf("%d.png", i+1))
 	}
 
 	// Verify all files exist
