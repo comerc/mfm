@@ -43,7 +43,9 @@ func (s *Service) ModerateOne(filePath string) (float32, error) {
 }
 
 func (s *Service) Moderate(filePaths []string) ([]float32, error) {
-	data := make([][]byte, 0, len(filePaths))
+	// Будем хранить информацию о том, сколько фреймов приходится на каждый файл
+	var data [][]byte     // Все фреймы для инференса
+	var frameCounts []int // Количество фреймов для каждого файла
 
 	for _, filePath := range filePaths {
 		fileFrames, err := s.mediaReader.Read(filePath)
@@ -51,14 +53,39 @@ func (s *Service) Moderate(filePaths []string) ([]float32, error) {
 			return nil, err
 		}
 
-		data = append(data, fileFrames[0])
+		frameCounts = append(frameCounts, len(fileFrames))
+
+		// Добавляем все фреймы этого файла в общий массив
+		for _, frame := range fileFrames {
+			data = append(data, frame)
+		}
 	}
 
-	result, err := s.modelRunner.Infer(data)
+	// Выполняем инференс для всех фреймов
+	allScores, err := s.modelRunner.Infer(data)
 	if err != nil {
 		return nil, err
 	}
-	return result, nil
+
+	// Объединяем результаты для фреймов одного видео
+	var results []float32
+	frameIndex := 0
+
+	for _, count := range frameCounts {
+		if count == 1 {
+			// Это изображение - просто добавляем один результат
+			results = append(results, allScores[frameIndex])
+			frameIndex++
+		} else {
+			// Это видео - берем максимальный результат среди всех фреймов
+			videoScores := allScores[frameIndex : frameIndex+count]
+			maxScore := s.getMaxScore(videoScores)
+			results = append(results, maxScore)
+			frameIndex += count
+		}
+	}
+
+	return results, nil
 }
 
 func (s *Service) getMaxScore(scores []float32) float32 {
