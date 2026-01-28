@@ -23,7 +23,9 @@ func TestRead_Success(t *testing.T) {
 
 	file, err := os.Create(testFile)
 	require.NoError(t, err, "should create test file successfully")
-	defer file.Close()
+	t.Cleanup(func() {
+		_ = file.Close()
+	})
 
 	err = png.Encode(file, img)
 	require.NoError(t, err, "should encode PNG successfully")
