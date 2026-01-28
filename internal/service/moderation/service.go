@@ -17,16 +17,14 @@ type ModelRunner interface {
 // Service implements Service
 type Service struct {
 	log         *slog.Logger
-	uploadDir   string
 	mediaReader MediaReader
 	modelRunner ModelRunner
 }
 
 // New creates a new instance of ModerationService
-func New(uploadDir string, mediaReader MediaReader, modelRunner ModelRunner) *Service {
+func New(mediaReader MediaReader, modelRunner ModelRunner) *Service {
 	return &Service{
 		log:         slog.With(slog.String("module", "moderation")),
-		uploadDir:   uploadDir,
 		mediaReader: mediaReader,
 		modelRunner: modelRunner,
 	}
