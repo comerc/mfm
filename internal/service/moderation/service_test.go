@@ -4,8 +4,9 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/comerc/nsfw-mod/internal/service/moderation/mocks"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/comerc/nsfw-mod/internal/service/moderation/mocks"
 )
 
 func TestModerate_Success(t *testing.T) {
