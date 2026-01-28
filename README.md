@@ -36,13 +36,10 @@ see: doc/models/<model>.md
     }
 ```
 
-- исследование моделей NSFW (хочу попробовать запустить каждую модель из перечисленных и замерить их производительность)
-  - [ ] FaceONNX/NsfwONNX (на базе MobileNet или SqueezeNet) - быстрый фильтр "Yes/No", через OpenVINO
-  - [ ] MobileNetV3
-  - [ ] CLIP (LAION‑AI/CLIP‑based‑NSFW‑Detector) - Understands semantics & nuance.
-  - [ ] OpenNSFW2 (Yahoo Open‑NSFW, Keras/TensorFlow 2) - оптимизирована для быстрой проверки кадров в потоке "Yes/No"
-  - [ ] NudeNet - находит конкретные зоны (грудь, гениталии и т.д.)
-  - [ ] YOLOv8 - аналог NudeNet
-  - [ ] DeepDanbooru (KichangKim/DeepDanbooru) - для аниме / хентай
-  - [ ] WD14-ViT (Vision Transformer) - как основное ядро
-  - [ ] GantMan/NSFW_model (версия InceptionV3 или ResNet)
+## Зависимости
+
+```bash
+go install github.com/vektra/mockery/v2@v2.53.3
+go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+```
+
