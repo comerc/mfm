@@ -29,7 +29,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestModerationService_Moderate_FileNotFound(t *testing.T) {
+func TestModerate_FileNotFound(t *testing.T) {
 	// Arrange
 	tempDir := t.TempDir()
 
@@ -47,7 +47,7 @@ func TestModerationService_Moderate_FileNotFound(t *testing.T) {
 	assert.Contains(t, err.Error(), "file not found:")
 }
 
-func TestModerationService_Moderate_Success(t *testing.T) {
+func TestModerate_Success(t *testing.T) {
 	// Arrange
 	tempDir := t.TempDir()
 	testFile := filepath.Join(tempDir, "test.png")
@@ -82,6 +82,7 @@ func TestModerationService_Moderate_Success(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			// Arrange
 			mediaReader := mediareader.New()
 			modelRunner := tt.newRunner()
@@ -104,7 +105,7 @@ func TestModerationService_Moderate_Success(t *testing.T) {
 	}
 }
 
-func TestModerationService_Moderate_Integration(t *testing.T) {
+func TestModerate_Integration(t *testing.T) {
 	tests := []struct {
 		name      string
 		newRunner func() moderation.ModelRunner
@@ -121,6 +122,7 @@ func TestModerationService_Moderate_Integration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			// Arrange
 			mediaReader := mediareader.New()
 			modelRunner := tt.newRunner()

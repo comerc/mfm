@@ -3,6 +3,7 @@
 - [testing/synctest experiment for time and concurrency testing](https://danp.net/posts/synctest-experiment/)
 - Применяется `assert.AnError` вместо `errors.New("some error")`
 - Применяется `t.Parallel()` и флаг для выявления гонки данных
+- Для call-тестов (`func(t *testing.T)`) тоже применяется `t.Parallel()` 
 - Применяется AAA (Arange Act Asset), т.е. assert-ы для проверки условий, а request-для проверки сетапа
 - Юнит-тесты размещаются в том же пакете, что и тестируемый код, с суффиксом `_test.go`
 - Интеграционные тесты размещаются в директории `/test`

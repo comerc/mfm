@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestService_Read_Success(t *testing.T) {
+func TestRead_Success(t *testing.T) {
 	t.Parallel()
 	// Arrange
 	tempDir := t.TempDir()
@@ -42,7 +42,7 @@ func TestService_Read_Success(t *testing.T) {
 	assert.Len(t, frame, expectedSize, "frame size should match expected dimensions")
 }
 
-func TestService_Read_FileNotFound(t *testing.T) {
+func TestRead_FileNotFound(t *testing.T) {
 	t.Parallel()
 	// Arrange
 	tempDir := t.TempDir()
@@ -58,7 +58,7 @@ func TestService_Read_FileNotFound(t *testing.T) {
 	assert.Contains(t, err.Error(), "file not found", "error message should contain 'file not found'")
 }
 
-func TestService_Read_UnsupportedType(t *testing.T) {
+func TestRead_UnsupportedType(t *testing.T) {
 	t.Parallel()
 	// Arrange
 	tempDir := t.TempDir()
