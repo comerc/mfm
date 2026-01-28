@@ -5,6 +5,7 @@ import (
 )
 
 func TestRepo_Infer(t *testing.T) {
+	t.Parallel()
 	repo := New()
 
 	// Test with nil data

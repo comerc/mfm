@@ -11,6 +11,7 @@ import (
 )
 
 func TestService_Read_Success(t *testing.T) {
+	t.Parallel()
 	// Create temporary directory for testing
 	tempDir := t.TempDir()
 	testFile := filepath.Join(tempDir, "test.png")
@@ -49,6 +50,7 @@ func TestService_Read_Success(t *testing.T) {
 }
 
 func TestService_Read_FileNotFound(t *testing.T) {
+	t.Parallel()
 	tempDir := t.TempDir()
 	repo := New()
 
@@ -65,6 +67,7 @@ func TestService_Read_FileNotFound(t *testing.T) {
 }
 
 func TestService_Read_UnsupportedType(t *testing.T) {
+	t.Parallel()
 	tempDir := t.TempDir()
 	testFile := filepath.Join(tempDir, "test.txt")
 
