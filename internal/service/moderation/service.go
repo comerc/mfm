@@ -4,10 +4,12 @@ import (
 	"log/slog"
 )
 
+//go:generate mockery --name=MediaReader
 type MediaReader interface {
 	Read(filePath string) ([][]byte, error)
 }
 
+//go:generate mockery --name=ModelRunner
 type ModelRunner interface {
 	Infer(data [][]byte) ([]float32, error)
 }
