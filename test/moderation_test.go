@@ -54,7 +54,8 @@ func TestModerationService_Moderate_OpenRunner_Success(t *testing.T) {
 	mediaReader := mediareader.New()
 	modelRunner := openrunner.New()
 	service := moderation.New(tempDir, mediaReader, modelRunner)
-	score, err := service.ModerateOne(testFile)
+	scores, err := service.Moderate([]string{testFile})
+	score := scores[0]
 
 	if err != nil {
 		t.Error(err)
@@ -89,7 +90,8 @@ func TestModerationService_Moderate_OpenRunner_RealAssets(t *testing.T) {
 
 		t.Run(f.Name(), func(t *testing.T) {
 			filePath := filepath.Join(assetsDir, f.Name())
-			score, err := service.ModerateOne(filePath)
+			scores, err := service.Moderate([]string{filePath})
+			score := scores[0]
 
 			if err != nil {
 				t.Error(err)
@@ -112,7 +114,7 @@ func TestModerationService_Moderate_FileNotFound(t *testing.T) {
 	service := moderation.New(tempDir, mediaReader, modelRunner)
 
 	nonExistentFile := filepath.Join(tempDir, "nonexistent.png")
-	_, err := service.ModerateOne(nonExistentFile)
+	_, err := service.Moderate([]string{nonExistentFile})
 
 	if err == nil || !strings.Contains(err.Error(), "file not found:") {
 		t.Error("invalid error")
@@ -149,7 +151,8 @@ func TestModerationService_Moderate_ViTRunner_Success(t *testing.T) {
 	mediaReader := mediareader.New()
 	vitRunner := vitrunner.New()
 	service := moderation.New(tempDir, mediaReader, vitRunner)
-	score, err := service.ModerateOne(testFile)
+	scores, err := service.Moderate([]string{testFile})
+	score := scores[0]
 
 	if err != nil {
 		t.Error(err)
@@ -186,7 +189,8 @@ func TestModerationService_Moderate_ViTRunner_RealAssets(t *testing.T) {
 
 		t.Run(f.Name(), func(t *testing.T) {
 			fullPath := filepath.Join(assetsDir, f.Name())
-			score, err := service.ModerateOne(fullPath)
+			scores, err := service.Moderate([]string{fullPath})
+			score := scores[0]
 
 			if err != nil {
 				t.Error(err)
@@ -378,7 +382,8 @@ func TestModerationService_Moderate_OpenRunner_RealVideoAssets(t *testing.T) {
 		}
 
 		t.Run(filepath.Base(videoPath), func(t *testing.T) {
-			score, err := service.ModerateOne(videoPath)
+			scores, err := service.Moderate([]string{videoPath})
+			score := scores[0]
 			if err != nil {
 				t.Error(err)
 			}
@@ -410,7 +415,8 @@ func TestModerationService_Moderate_ViTRunner_RealVideoAssets(t *testing.T) {
 		}
 
 		t.Run(filepath.Base(videoPath), func(t *testing.T) {
-			score, err := service.ModerateOne(videoPath)
+			scores, err := service.Moderate([]string{videoPath})
+			score := scores[0]
 			if err != nil {
 				t.Error(err)
 			}

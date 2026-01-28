@@ -24,24 +24,6 @@ func New(uploadDir string, mediaReader MediaReader, modelRunner ModelRunner) *Se
 	}
 }
 
-func (s *Service) ModerateOne(filePath string) (float32, error) {
-	data, err := s.mediaReader.Read(filePath)
-	if err != nil {
-		return 0.0, err
-	}
-	frameScores, err := s.modelRunner.Infer(data)
-	if err != nil {
-		return 0.0, err
-	}
-	var maxScore float32
-	for _, score := range frameScores {
-		if score > maxScore {
-			maxScore = score
-		}
-	}
-	return maxScore, nil
-}
-
 func (s *Service) Moderate(filePaths []string) ([]float32, error) {
 	// Будем хранить информацию о том, сколько фреймов приходится на каждый файл
 	var data [][]byte     // Все фреймы для инференса
