@@ -9,6 +9,14 @@ type MediaReader struct {
 	mock.Mock
 }
 
+type MediaReader_Expecter struct {
+	mock *mock.Mock
+}
+
+func (_m *MediaReader) EXPECT() *MediaReader_Expecter {
+	return &MediaReader_Expecter{mock: &_m.Mock}
+}
+
 // Read provides a mock function with given fields: filePath
 func (_m *MediaReader) Read(filePath string) ([][]byte, error) {
 	ret := _m.Called(filePath)
@@ -37,6 +45,34 @@ func (_m *MediaReader) Read(filePath string) ([][]byte, error) {
 	}
 
 	return r0, r1
+}
+
+// MediaReader_Read_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Read'
+type MediaReader_Read_Call struct {
+	*mock.Call
+}
+
+// Read is a helper method to define mock.On call
+//   - filePath string
+func (_e *MediaReader_Expecter) Read(filePath interface{}) *MediaReader_Read_Call {
+	return &MediaReader_Read_Call{Call: _e.mock.On("Read", filePath)}
+}
+
+func (_c *MediaReader_Read_Call) Run(run func(filePath string)) *MediaReader_Read_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *MediaReader_Read_Call) Return(_a0 [][]byte, _a1 error) *MediaReader_Read_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MediaReader_Read_Call) RunAndReturn(run func(string) ([][]byte, error)) *MediaReader_Read_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // NewMediaReader creates a new instance of MediaReader. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

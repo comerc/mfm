@@ -9,6 +9,14 @@ type ModelRunner struct {
 	mock.Mock
 }
 
+type ModelRunner_Expecter struct {
+	mock *mock.Mock
+}
+
+func (_m *ModelRunner) EXPECT() *ModelRunner_Expecter {
+	return &ModelRunner_Expecter{mock: &_m.Mock}
+}
+
 // Infer provides a mock function with given fields: data
 func (_m *ModelRunner) Infer(data [][]byte) ([]float32, error) {
 	ret := _m.Called(data)
@@ -37,6 +45,34 @@ func (_m *ModelRunner) Infer(data [][]byte) ([]float32, error) {
 	}
 
 	return r0, r1
+}
+
+// ModelRunner_Infer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Infer'
+type ModelRunner_Infer_Call struct {
+	*mock.Call
+}
+
+// Infer is a helper method to define mock.On call
+//   - data [][]byte
+func (_e *ModelRunner_Expecter) Infer(data interface{}) *ModelRunner_Infer_Call {
+	return &ModelRunner_Infer_Call{Call: _e.mock.On("Infer", data)}
+}
+
+func (_c *ModelRunner_Infer_Call) Run(run func(data [][]byte)) *ModelRunner_Infer_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([][]byte))
+	})
+	return _c
+}
+
+func (_c *ModelRunner_Infer_Call) Return(_a0 []float32, _a1 error) *ModelRunner_Infer_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ModelRunner_Infer_Call) RunAndReturn(run func([][]byte) ([]float32, error)) *ModelRunner_Infer_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // NewModelRunner creates a new instance of ModelRunner. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
