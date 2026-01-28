@@ -24,7 +24,6 @@ func New(uploadDir string, mediaReader MediaReader, modelRunner ModelRunner) *Se
 	}
 }
 
-// ModerateOne обрабатывает один файл (картинку или видосик)
 func (s *Service) ModerateOne(filePath string) (float32, error) {
 	data, err := s.mediaReader.Read(filePath)
 	if err != nil {
@@ -43,8 +42,7 @@ func (s *Service) ModerateOne(filePath string) (float32, error) {
 	return maxScore, nil
 }
 
-// ModerateImages обрабатывает только картинки в пакете
-func (s *Service) ModerateImages(filePaths []string) ([]float32, error) {
+func (s *Service) Moderate(filePaths []string) ([]float32, error) {
 	data := make([][]byte, 0, len(filePaths))
 
 	for _, filePath := range filePaths {
@@ -56,5 +54,19 @@ func (s *Service) ModerateImages(filePaths []string) ([]float32, error) {
 		data = append(data, fileFrames[0])
 	}
 
-	return s.modelRunner.Infer(data)
+	result, err := s.modelRunner.Infer(data)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *Service) getMaxScore(scores []float32) float32 {
+	var maxScore float32
+	for _, score := range scores {
+		if score > maxScore {
+			maxScore = score
+		}
+	}
+	return maxScore
 }

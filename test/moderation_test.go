@@ -220,7 +220,7 @@ func TestModerationService_Moderate_OpenRunner_BatchProcessing(t *testing.T) {
 	}
 
 	// Test batch processing with all 7 images
-	scores, err := service.ModerateImages(imagePaths)
+	scores, err := service.Moderate(imagePaths)
 	if err != nil {
 		t.Error(err)
 	}
@@ -266,7 +266,7 @@ func TestModerationService_Moderate_ViTRunner_BatchProcessing(t *testing.T) {
 	}
 
 	// Test batch processing with all 7 images
-	scores, err := service.ModerateImages(imagePaths)
+	scores, err := service.Moderate(imagePaths)
 	if err != nil {
 		t.Error(err)
 	}
@@ -314,7 +314,7 @@ func BenchmarkModerationService_Moderate_OpenRunner_BatchProcessing120(b *testin
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		scores, err := service.ModerateImages(imagePaths)
+		scores, err := service.Moderate(imagePaths)
 		if err != nil {
 			b.Error(err)
 		}
@@ -348,7 +348,7 @@ func BenchmarkModerationService_Moderate_ViTRunner_BatchProcessing120(b *testing
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		scores, err := service.ModerateImages(imagePaths)
+		scores, err := service.Moderate(imagePaths)
 		if err != nil {
 			b.Error(err)
 		}
