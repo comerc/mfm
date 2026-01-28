@@ -112,7 +112,8 @@ func TestModerate_Success(t *testing.T) {
 
 				video1FrameData := [][]byte{{1, 2, 3}, {4, 5, 6}}    // 2 фрейма
 				video2FrameData := [][]byte{{7, 8, 9}, {10, 11, 12}} // 2 фрейма
-				allFrameData := append(video1FrameData, video2FrameData...)
+				allFrameData := append([][]byte{}, video1FrameData...)
+				allFrameData = append(allFrameData, video2FrameData...)
 
 				mockMediaReader.EXPECT().Read("video1.mp4").Return(video1FrameData, nil)
 				mockMediaReader.EXPECT().Read("video2.mp4").Return(video2FrameData, nil)
@@ -135,7 +136,8 @@ func TestModerate_Success(t *testing.T) {
 
 				imageFrameData := [][]byte{{1, 2, 3}}            // 1 фрейм для изображения
 				videoFrameData := [][]byte{{4, 5, 6}, {7, 8, 9}} // 2 фрейма для видео
-				allFrameData := append(imageFrameData, videoFrameData...)
+				allFrameData := append([][]byte{}, imageFrameData...)
+				allFrameData = append(allFrameData, videoFrameData...)
 
 				mockMediaReader.EXPECT().Read("image.jpg").Return(imageFrameData, nil)
 				mockMediaReader.EXPECT().Read("video.mp4").Return(videoFrameData, nil)

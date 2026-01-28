@@ -51,9 +51,7 @@ func (s *Service) Moderate(filePaths []string) ([]float32, error) {
 		frameCounts = append(frameCounts, len(fileFrames))
 
 		// Добавляем все фреймы этого файла в общий массив
-		for _, frame := range fileFrames {
-			data = append(data, frame)
-		}
+		data = append(data, fileFrames...)
 	}
 
 	// Выполняем инференс для всех фреймов
@@ -74,11 +72,21 @@ func (s *Service) Moderate(filePaths []string) ([]float32, error) {
 	for i, count := range frameCounts {
 		if count == 1 {
 			// Это изображение - просто добавляем один результат
+			// Check bounds before accessing allScores
+			if frameIndex >= len(allScores) {
+				s.log.Error("Index out of bounds when processing image", "file_path", filePaths[i], "frame_index", frameIndex, "all_scores_len", len(allScores))
+				continue
+			}
 			results = append(results, allScores[frameIndex])
 			s.log.Debug("Image processed", "file_path", filePaths[i], "score", float64(allScores[frameIndex]))
 			frameIndex++
 		} else {
 			// Это видео - берем максимальный результат среди всех фреймов
+			// Check bounds before slicing allScores
+			if frameIndex+count > len(allScores) {
+				s.log.Error("Index out of bounds when processing video", "file_path", filePaths[i], "frame_index", frameIndex, "count", count, "all_scores_len", len(allScores))
+				continue
+			}
 			videoScores := allScores[frameIndex : frameIndex+count]
 			maxScore := s.getMaxScore(videoScores)
 			results = append(results, maxScore)
