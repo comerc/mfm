@@ -28,31 +28,31 @@ type Repo struct {
 // New creates a new instance of MediaReader repository
 func New() *Repo {
 	return &Repo{
-		log: slog.With(slog.String("module", "mediareader")),
+		log: slog.With("module", "mediareader"),
 	}
 }
 
 func (s *Repo) Read(filePath string) ([][]byte, error) {
-	s.log.Info("Reading media file", slog.String("file_path", filePath))
+	s.log.Info("Reading media file", "file_path", filePath)
 
 	// Check file first and get content type
 	contentType, err := s.check(filePath)
 	if err != nil {
-		s.log.Error("Failed to check file", slog.String("file_path", filePath), slog.String("error", err.Error()))
+		s.log.Error("Failed to check file", "file_path", filePath, "error", err.Error())
 		return nil, err
 	}
 
 	// Read entire file at once (io.ReadAll handles chunking internally)
 	file, err := os.Open(filePath)
 	if err != nil {
-		s.log.Error("Unable to open file", slog.String("file_path", filePath), slog.String("error", err.Error()))
+		s.log.Error("Unable to open file", "file_path", filePath, "error", err.Error())
 		return nil, fmt.Errorf("unable to open file: %w", err)
 	}
 	defer file.Close()
 
 	data, err := io.ReadAll(file)
 	if err != nil {
-		s.log.Error("Error reading file", slog.String("file_path", filePath), slog.String("error", err.Error()))
+		s.log.Error("Error reading file", "file_path", filePath, "error", err.Error())
 		return nil, fmt.Errorf("error reading file: %w", err)
 	}
 
@@ -62,13 +62,13 @@ func (s *Repo) Read(filePath string) ([][]byte, error) {
 	case contentTypeVideo:
 		return s.processVideo(filePath)
 	default:
-		s.log.Error("Unsupported content type", slog.String("content_type", string(contentType)), slog.String("file_path", filePath))
+		s.log.Error("Unsupported content type", "content_type", string(contentType), "file_path", filePath)
 		return nil, fmt.Errorf("unsupported content type: %s", contentType)
 	}
 }
 
 func (s *Repo) processVideo(filePath string) ([][]byte, error) {
-	s.log.Info("Processing video file", slog.String("file_path", filePath))
+	s.log.Info("Processing video file", "file_path", filePath)
 
 	// ffmpeg command to extract frames
 	// -i filePath: input file
@@ -87,12 +87,12 @@ func (s *Repo) processVideo(filePath string) ([][]byte, error) {
 	// Capture stdout
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		s.log.Error("Failed to get stdout pipe", slog.String("file_path", filePath), slog.String("error", err.Error()))
+		s.log.Error("Failed to get stdout pipe", "file_path", filePath, "error", err.Error())
 		return nil, fmt.Errorf("failed to get stdout pipe: %w", err)
 	}
 
 	if err := cmd.Start(); err != nil {
-		s.log.Error("Failed to start ffmpeg", slog.String("file_path", filePath), slog.String("error", err.Error()))
+		s.log.Error("Failed to start ffmpeg", "file_path", filePath, "error", err.Error())
 		return nil, fmt.Errorf("failed to start ffmpeg: %w", err)
 	}
 
@@ -111,7 +111,7 @@ func (s *Repo) processVideo(filePath string) ([][]byte, error) {
 				// Less bytes than expected for a full frame, ignore incomplete frame
 				break
 			}
-			s.log.Error("Error reading video frame", slog.String("file_path", filePath), slog.String("error", err.Error()))
+			s.log.Error("Error reading video frame", "file_path", filePath, "error", err.Error())
 			return nil, fmt.Errorf("error reading video frame: %w", err)
 		}
 		if n == frameSize {
@@ -127,20 +127,20 @@ func (s *Repo) processVideo(filePath string) ([][]byte, error) {
 		// Only return error if we didn't extract any frames, otherwise partial success is okay?
 		// ffmpeg might exit with non-zero on some warnings.
 		// For now, strict check.
-		s.log.Error("FFmpeg exited with error", slog.String("file_path", filePath), slog.String("error", err.Error()))
+		s.log.Error("FFmpeg exited with error", "file_path", filePath, "error", err.Error())
 		return nil, fmt.Errorf("ffmpeg exited with error: %w", err)
 	}
 
-	s.log.Info("Video processed successfully", slog.String("file_path", filePath), slog.Int("frames_extracted", frameCount))
+	s.log.Info("Video processed successfully", "file_path", filePath, "frames_extracted", frameCount)
 	return frames, nil
 }
 
 func (s *Repo) processImage(data []byte) ([][]byte, error) {
-	s.log.Info("Processing image file", slog.Int("data_size", len(data)))
+	s.log.Info("Processing image file", "data_size", len(data))
 
 	img, _, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
-		s.log.Error("Failed to decode image", slog.String("error", err.Error()))
+		s.log.Error("Failed to decode image", "error", err.Error())
 		return nil, fmt.Errorf("failed to decode image: %w", err)
 	}
 
@@ -168,16 +168,16 @@ func (s *Repo) processImage(data []byte) ([][]byte, error) {
 
 // Check if file exists and has supported extension/type
 func (s *Repo) check(filePath string) (ContentType, error) {
-	s.log.Debug("Checking file", slog.String("file_path", filePath))
+	s.log.Debug("Checking file", "file_path", filePath)
 
 	// Check if file exists
 	file, err := os.Open(filePath)
 	if os.IsNotExist(err) {
-		s.log.Warn("File not found", slog.String("file_path", filePath))
+		s.log.Warn("File not found", "file_path", filePath)
 		return contentTypeUnknown, fmt.Errorf("file not found: %s", filePath)
 	}
 	if err != nil {
-		s.log.Error("Unable to open file", slog.String("file_path", filePath), slog.String("error", err.Error()))
+		s.log.Error("Unable to open file", "file_path", filePath, "error", err.Error())
 		return contentTypeUnknown, fmt.Errorf("unable to open file: %w", err)
 	}
 	defer file.Close()
@@ -186,14 +186,14 @@ func (s *Repo) check(filePath string) (ContentType, error) {
 	buffer := make([]byte, 512)
 	n, err := file.Read(buffer)
 	if err != nil && n == 0 {
-		s.log.Error("Unable to read file", slog.String("file_path", filePath), slog.String("error", err.Error()))
+		s.log.Error("Unable to read file", "file_path", filePath, "error", err.Error())
 		return contentTypeUnknown, fmt.Errorf("unable to read file: %w", err)
 	}
 
 	// Detect content type
 	rawContentType := http.DetectContentType(buffer[:n])
 
-	s.log.Debug("Detected content type", slog.String("content_type", rawContentType), slog.String("file_path", filePath))
+	s.log.Debug("Detected content type", "content_type", rawContentType, "file_path", filePath)
 
 	// Check if it's an image or video type
 	if strings.HasPrefix(rawContentType, "image/") {
@@ -203,7 +203,7 @@ func (s *Repo) check(filePath string) (ContentType, error) {
 		return contentTypeVideo, nil
 	}
 
-	s.log.Warn("Unsupported file type", slog.String("content_type", rawContentType), slog.String("file_path", filePath))
+	s.log.Warn("Unsupported file type", "content_type", rawContentType, "file_path", filePath)
 	return contentTypeUnknown, fmt.Errorf("unsupported file type: %s", rawContentType)
 }
 

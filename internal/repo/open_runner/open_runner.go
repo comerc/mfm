@@ -18,7 +18,7 @@ type Repo struct {
 
 // New создает новый экземпляр репозитория моделей
 func New() *Repo {
-	log := slog.With(slog.String("module", "openrunner"))
+	log := slog.With("module", "openrunner")
 
 	// Путь к модели
 	modelPath := filepath.Join("assets", "opennsfw2.onnx")
@@ -26,7 +26,7 @@ func New() *Repo {
 	// Проверяем существование модели
 	if _, err := os.Stat(modelPath); os.IsNotExist(err) {
 		// Модель не найдена, используем mock
-		log.Warn("Model not found, using mock", slog.String("model_path", modelPath))
+		log.Warn("Model not found, using mock", "model_path", modelPath)
 		return &Repo{
 			log:     log,
 			session: nil,
@@ -36,11 +36,11 @@ func New() *Repo {
 	// Загружаем модель
 	session, err := onnxruntime_go.NewDynamicAdvancedSession(modelPath, []string{"input"}, []string{"get_item"}, nil)
 	if err != nil {
-		log.Error("Failed to create session", slog.String("error", err.Error()))
+		log.Error("Failed to create session", "error", err.Error())
 		panic(fmt.Sprintf("Failed to create session: %v", err))
 	}
 
-	log.Info("Model loaded successfully", slog.String("model_path", modelPath))
+	log.Info("Model loaded successfully", "model_path", modelPath)
 	return &Repo{
 		log:     log,
 		session: session,
@@ -49,10 +49,10 @@ func New() *Repo {
 
 // Infer запускает inference на данных (пакет кадров)
 func (r *Repo) Infer(frames [][]byte) ([]float32, error) {
-	r.log.Info("Starting inference", slog.Int("frame_count", len(frames)))
+	r.log.Info("Starting inference", "frame_count", len(frames))
 
 	if len(frames) == 0 || r.session == nil {
-		r.log.Warn("Skipping inference", slog.Bool("empty_frames", len(frames) == 0), slog.Bool("session_nil", r.session == nil))
+		r.log.Warn("Skipping inference", "empty_frames", len(frames) == 0, "session_nil", r.session == nil)
 		return []float32{}, nil
 	}
 
@@ -63,7 +63,7 @@ func (r *Repo) Infer(frames [][]byte) ([]float32, error) {
 	inputData := make([]float32, batchSize*224*224*3)
 	for i, frame := range frames {
 		if len(frame) != 224*224*3 {
-			r.log.Error("Invalid frame size", slog.Int("expected", 224*224*3), slog.Int("actual", len(frame)))
+			r.log.Error("Invalid frame size", "expected", 224*224*3, "actual", len(frame))
 			return []float32{}, errors.New("invalid frame size")
 		}
 
@@ -85,7 +85,7 @@ func (r *Repo) Infer(frames [][]byte) ([]float32, error) {
 	// Создаем тензор
 	inputTensor, err := onnxruntime_go.NewTensor(inputShape, inputData)
 	if err != nil {
-		r.log.Error("Failed to create input tensor", slog.String("error", err.Error()))
+		r.log.Error("Failed to create input tensor", "error", err.Error())
 		return []float32{}, fmt.Errorf("failed to create input tensor: %v", err)
 	}
 	defer func() {
@@ -96,7 +96,7 @@ func (r *Repo) Infer(frames [][]byte) ([]float32, error) {
 	outputs := []onnxruntime_go.Value{nil}
 	err = r.session.Run([]onnxruntime_go.Value{inputTensor}, outputs)
 	if err != nil {
-		r.log.Error("Inference failed", slog.String("error", err.Error()))
+		r.log.Error("Inference failed", "error", err.Error())
 		return []float32{}, fmt.Errorf("inference failed: %v", err)
 	}
 	defer func() {
@@ -119,6 +119,6 @@ func (r *Repo) Infer(frames [][]byte) ([]float32, error) {
 		scores[i] = score
 	}
 
-	r.log.Info("Inference completed", slog.Int("frame_count", batchSize))
+	r.log.Info("Inference completed", "frame_count", batchSize)
 	return scores, nil
 }
