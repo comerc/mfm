@@ -10,13 +10,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	mediareader "github.com/comerc/nsfw-mod/internal/repo/media_reader"
 	openrunner "github.com/comerc/nsfw-mod/internal/repo/open_runner"
 	vitrunner "github.com/comerc/nsfw-mod/internal/repo/vit_runner"
-	"github.com/comerc/nsfw-mod/internal/service/moderation"
-	"github.com/comerc/nsfw-mod/pkg/onnxinit"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	moderation "github.com/comerc/nsfw-mod/internal/service/moderation"
+	onnxinit "github.com/comerc/nsfw-mod/pkg/onnxinit"
 )
 
 func TestMain(m *testing.M) {
