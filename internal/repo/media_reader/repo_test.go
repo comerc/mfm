@@ -6,87 +6,75 @@ import (
 	"image/png"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestService_Read_Success(t *testing.T) {
 	t.Parallel()
-	// Create temporary directory for testing
+	// Arrange
 	tempDir := t.TempDir()
 	testFile := filepath.Join(tempDir, "test.png")
 
-	// Create a simple test image
 	img := image.NewRGBA(image.Rect(0, 0, 1, 1))
 	img.Set(0, 0, color.RGBA{255, 0, 0, 255}) // Red pixel
 
 	file, err := os.Create(testFile)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err, "should create test file successfully")
 	defer file.Close()
 
 	err = png.Encode(file, img)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err, "should encode PNG successfully")
 
 	repo := New()
+
+	// Act
 	frames, err := repo.Read(testFile)
 
-	if err != nil {
-		t.Errorf("expected no error, got %s", err)
-	}
-
-	if len(frames) != 1 {
-		t.Errorf("expected 1 frame, got %d", len(frames))
-	}
+	// Assert
+	assert.NoError(t, err, "expected no error when reading valid image")
+	assert.Len(t, frames, 1, "expected exactly 1 frame from a single image")
 
 	frame := frames[0]
 	expectedSize := 224 * 224 * 3
-	if len(frame) != expectedSize {
-		t.Errorf("expected frame size %d, got %d", expectedSize, len(frame))
-	}
+	assert.Len(t, frame, expectedSize, "frame size should match expected dimensions")
 }
 
 func TestService_Read_FileNotFound(t *testing.T) {
 	t.Parallel()
+	// Arrange
 	tempDir := t.TempDir()
 	repo := New()
 
 	nonExistentFile := filepath.Join(tempDir, "nonexistent.png")
+
+	// Act
 	_, err := repo.Read(nonExistentFile)
 
-	if err == nil {
-		t.Error("expected error for non-existent file")
-	}
-
-	if !strings.Contains(err.Error(), "file not found") {
-		t.Errorf("expected error containing 'file not found', got %s", err.Error())
-	}
+	// Assert
+	assert.Error(t, err, "expected error for non-existent file")
+	assert.Contains(t, err.Error(), "file not found", "error message should contain 'file not found'")
 }
 
 func TestService_Read_UnsupportedType(t *testing.T) {
 	t.Parallel()
+	// Arrange
 	tempDir := t.TempDir()
 	testFile := filepath.Join(tempDir, "test.txt")
 
-	// Create a file with invalid content
 	err := os.WriteFile(testFile, []byte("this is not an image"), 0600)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err, "should create test file successfully")
 
 	repo := New()
+
+	// Act
 	_, err = repo.Read(testFile)
 
-	if err == nil {
-		t.Error("expected error for unsupported file type")
-	}
-
-	if !strings.Contains(err.Error(), "unsupported file type") {
-		t.Errorf("expected 'unsupported file type' error, got %s", err.Error())
-	}
+	// Assert
+	assert.Error(t, err, "expected error for unsupported file type")
+	assert.Contains(t, err.Error(), "unsupported file type", "error message should contain 'unsupported file type'")
 }
 
 func TestService_Read_Video_Success(t *testing.T) {

@@ -15,6 +15,8 @@ import (
 	vitrunner "github.com/comerc/nsfw-mod/internal/repo/vit_runner"
 	"github.com/comerc/nsfw-mod/internal/service/moderation"
 	"github.com/comerc/nsfw-mod/pkg/onnxinit"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMain(m *testing.M) {
@@ -28,6 +30,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestModerationService_Moderate_FileNotFound(t *testing.T) {
+	// Arrange
 	tempDir := t.TempDir()
 
 	mediaReader := mediareader.New()
@@ -35,19 +38,20 @@ func TestModerationService_Moderate_FileNotFound(t *testing.T) {
 	service := moderation.New(tempDir, mediaReader, modelRunner)
 
 	nonExistentFile := filepath.Join(tempDir, "nonexistent.png")
+
+	// Act
 	_, err := service.Moderate([]string{nonExistentFile})
 
-	if err == nil || !strings.Contains(err.Error(), "file not found:") {
-		t.Error("invalid error")
-	}
+	// Assert
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "file not found:")
 }
 
 func TestModerationService_Moderate_Success(t *testing.T) {
-	// Create temporary directory for testing
+	// Arrange
 	tempDir := t.TempDir()
 	testFile := filepath.Join(tempDir, "test.png")
 
-	// Create a simple test image
 	img := image.NewRGBA(image.Rect(0, 0, 224, 224))
 	for y := 0; y < 224; y++ {
 		for x := 0; x < 224; x++ {
@@ -56,15 +60,11 @@ func TestModerationService_Moderate_Success(t *testing.T) {
 	}
 
 	file, err := os.Create(testFile)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err, "should create test file successfully")
+	defer file.Close()
 
 	err = png.Encode(file, img)
-	file.Close()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err, "should encode PNG successfully")
 
 	tests := []struct {
 		name      string
@@ -82,20 +82,20 @@ func TestModerationService_Moderate_Success(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Arrange
 			mediaReader := mediareader.New()
 			modelRunner := tt.newRunner()
 			service := moderation.New(tempDir, mediaReader, modelRunner)
+
+			// Act
 			scores, err := service.Moderate([]string{testFile})
 			score := scores[0]
 
-			if err != nil {
-				t.Error(err)
-			}
+			// Assert
+			assert.NoError(t, err, "moderate should not return error for valid image")
 
 			// Simple red image should not be NSFW, so score should be low
-			if score > 0.5 {
-				t.Errorf("expected score <= 0.5 for simple red image, got %f", score)
-			}
+			assert.True(t, score <= 0.5, "expected score <= 0.5 for simple red image, got %f", score)
 
 			if tt.name == "ViTRunner" {
 				t.Logf("ViT Result - IsNSFW: %v, Score: %.4f", score > 0.5, score)
@@ -121,6 +121,7 @@ func TestModerationService_Moderate_Integration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Arrange
 			mediaReader := mediareader.New()
 			modelRunner := tt.newRunner()
 			service := moderation.New(".", mediaReader, modelRunner)
@@ -128,9 +129,7 @@ func TestModerationService_Moderate_Integration(t *testing.T) {
 			// Собираем все файлы из assets (картинки и видео)
 			assetsDir := "assets"
 			entries, err := os.ReadDir(assetsDir)
-			if err != nil {
-				t.Fatalf("Failed to read assets directory: %v", err)
-			}
+			require.NoError(t, err, "should read assets directory successfully")
 
 			var filePaths []string
 			for _, entry := range entries {
@@ -147,20 +146,13 @@ func TestModerationService_Moderate_Integration(t *testing.T) {
 				t.Skip("No image or video files found in assets directory")
 			}
 
-			// Test batch processing with all collected files
+			// Act
 			scores, err := service.Moderate(filePaths)
-			if err != nil {
-				t.Error(err)
-			}
 
-			if len(scores) == 0 {
-				t.Fatalf("Batch processing failed: no scores returned")
-			}
-
-			// Проверяем, что количество возвращенных оценок совпадает с количеством файлов
-			if len(scores) != len(filePaths) {
-				t.Errorf("Expected %d scores, got %d", len(filePaths), len(scores))
-			}
+			// Assert
+			assert.NoError(t, err, "moderate should not return error for valid files")
+			assert.NotEmpty(t, scores, "Batch processing should return scores")
+			assert.Len(t, scores, len(filePaths), "should return same number of scores as input files")
 
 			// Логируем результаты для каждого файла
 			for i, filePath := range filePaths {
@@ -193,6 +185,7 @@ func BenchmarkModerate_BatchProcessing120(b *testing.B) {
 
 	for _, tt := range tests {
 		b.Run(tt.name, func(b *testing.B) {
+			// Arrange
 			mediaReader := mediareader.New()
 			modelRunner := tt.newRunner()
 			service := moderation.New(".", mediaReader, modelRunner)
@@ -206,14 +199,16 @@ func BenchmarkModerate_BatchProcessing120(b *testing.B) {
 
 			// Verify all files exist
 			for _, path := range imagePaths {
-				if _, err := os.Stat(path); os.IsNotExist(err) {
-					b.Fatalf("Required test image does not exist: %s", path)
-				}
+				_, err := os.Stat(path)
+				require.NoError(b, err, "Required test image does not exist: %s", path)
 			}
 
 			b.ResetTimer()
 			for n := 0; n < b.N; n++ {
+				// Act
 				scores, err := service.Moderate(imagePaths)
+
+				// Assert
 				if err != nil {
 					b.Error(err)
 				}

@@ -2,47 +2,53 @@ package openrunner
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRepo_Infer(t *testing.T) {
 	t.Parallel()
+	// Arrange
 	repo := New()
 
 	// Test with nil data
-	scores, err := repo.Infer(nil)
-	if err != nil {
-		t.Errorf("expected no error, got %v", err)
-	}
-	// For nil/empty data, should return empty slice
-	if len(scores) != 0 {
-		t.Errorf("expected empty slice, got length %d", len(scores))
-	}
+	t.Run("NilData", func(t *testing.T) {
+		// Act
+		scores, err := repo.Infer(nil)
+
+		// Assert
+		assert.NoError(t, err, "expected no error for nil data")
+		assert.Empty(t, scores, "expected empty slice for nil data")
+	})
 
 	// Test with empty batch
-	scores, err = repo.Infer([][]byte{})
-	if err != nil {
-		t.Errorf("expected no error, got %v", err)
-	}
-	// For empty batch, should return empty slice
-	if len(scores) != 0 {
-		t.Errorf("expected empty slice, got length %d", len(scores))
-	}
+	t.Run("EmptyBatch", func(t *testing.T) {
+		// Act
+		scores, err := repo.Infer([][]byte{})
+
+		// Assert
+		assert.NoError(t, err, "expected no error for empty batch")
+		assert.Empty(t, scores, "expected empty slice for empty batch")
+	})
 
 	// Test with some data (mock implementation always returns appropriate values when session is nil)
-	frame := make([]byte, 224*224*3)
-	frames := [][]byte{frame}
-	scores, err = repo.Infer(frames)
-	if err != nil {
-		t.Errorf("expected no error, got %v", err)
-	}
+	t.Run("ValidFrame", func(t *testing.T) {
+		// Arrange
+		frame := make([]byte, 224*224*3)
+		frames := [][]byte{frame}
 
-	// With mock implementation (session=nil), scores should be empty or contain zeros
-	switch {
-	case len(scores) == 0:
-		// This is expected when session is nil
-	case len(scores) != 1:
-		t.Errorf("expected 1 score, got %d", len(scores))
-	case scores[0] != 0.0:
-		t.Errorf("expected score of 0.0, got %f", scores[0])
-	}
+		// Act
+		scores, err := repo.Infer(frames)
+
+		// Assert
+		assert.NoError(t, err, "expected no error for valid frame")
+
+		// With mock implementation (session=nil), scores should be empty or contain zeros
+		if len(scores) == 0 {
+			// This is expected when session is nil
+			return
+		}
+		assert.Len(t, scores, 1, "expected 1 score for 1 frame")
+		assert.Equal(t, 0.0, scores[0], "expected score of 0.0 with mock implementation")
+	})
 }
