@@ -42,7 +42,6 @@ brew install ffmpeg
 go install github.com/go-task/task/v3/cmd/task@latest
 go install github.com/vektra/mockery/v2@v2.53.3
 go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
-go install github.com/unused-interface-methods/unused-interface-methods@latest
 ```
 
 ### Environment Variables

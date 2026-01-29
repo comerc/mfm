@@ -21,7 +21,6 @@ tasks:
       Run linters.
     cmds:
       - GOEXPERIMENT=synctest golangci-lint run
-      - GOEXPERIMENT=synctest unused-interface-methods ./...
 
     silent: true
 

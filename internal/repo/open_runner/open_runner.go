@@ -50,7 +50,7 @@ func New() *Repo {
 // Close закрывает сессию с моделью
 func (r *Repo) Close() {
 	if r.session != nil {
-		r.session.Destroy()
+		_ = r.session.Destroy()
 	}
 }
 

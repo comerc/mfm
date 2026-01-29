@@ -24,7 +24,10 @@ import (
 
 func main() {
 	// Загружаем переменные окружения из .env файла
-	godotenv.Load()
+	err := godotenv.Load()
+	if err != nil {
+		panic(err.Error())
+	}
 
 	// Инициализация ONNX Runtime
 	onnxinit.Initialize()
@@ -67,7 +70,7 @@ func main() {
 		// Простой ответ, чтобы показать, что сервис готов к работе
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status": "moderation service ready"}`))
+		_, _ = w.Write([]byte(`{"status": "moderation service ready"}`))
 	})
 
 	// Получаем порт из переменной окружения или используем 8081 по умолчанию

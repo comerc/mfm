@@ -10,16 +10,16 @@ import (
 
 var (
 	envOnce sync.Once
-	envErr  error
 )
 
 // LoadEnvFromRoot загружает .env файл из корня проекта
-func LoadEnvFromRoot() error {
+func LoadEnvFromRoot() {
 	envOnce.Do(func() {
-		envErr = loadEnvFromRootImpl()
+		err := loadEnvFromRootImpl()
+		if err != nil {
+			panic(err.Error())
+		}
 	})
-
-	return envErr
 }
 
 // loadEnvFromRootImpl содержит оригинальную реализацию загрузки .env файла
