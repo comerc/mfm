@@ -34,6 +34,9 @@ go.work.sum
 nsfw-mod
 main
 tmp
-
 .DS_Store
+
+# ML model files
+*.onnx
+
 
