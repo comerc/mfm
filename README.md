@@ -8,9 +8,10 @@ Moderation NSFW
 The project uses ONNX Runtime for ML model inference. Install the ONNX Runtime shared library:
 
 - **macOS**:
-  ```bash
-  brew install onnxruntime
-  ```
+
+```bash
+brew install onnxruntime
+```
 
 - **Other platforms**: See [ONNX Runtime installation guide](https://onnxruntime.ai/docs/install/).
 
@@ -18,25 +19,17 @@ The project uses ONNX Runtime for ML model inference. Install the ONNX Runtime s
 
 Download an ONNX NSFW detection model and place it as `assets/<model>.onnx`. The model should accept input shape `[batch_size, 224, 224, 3]` (float32, normalized 0-1) and output shape `[batch_size, 1]` (float32, probability of NSFW).
 
-see: doc/models/<model>.md
+См. подробности по установке моделей: doc/models/<model>.md
 
-## TODO
+### ffmpeg
 
-- [ ] Добавить Grafana MCP
+- **macOS**:
 
-```json
-    "grafana": {
-      "command": "docker",
-      "args": [
-        "run", "--rm", "-i",
-        "-e", "GRAFANA_URL=http://host.docker.internal:3000",
-        "-e", "GRAFANA_API_KEY=ваш_токен_здесь",
-        "grafana/mcp-grafana:latest"
-      ]
-    }
+```bash
+brew install ffmpeg
 ```
 
-## Зависимости
+### Прочие Зависимости
 
 ```bash
 go install github.com/go-task/task/v3/cmd/task@latest
