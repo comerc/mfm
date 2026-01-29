@@ -26,6 +26,21 @@ tasks:
 
     silent: true
 
+  run:
+    desc: "Run the server"
+    cmds:
+      - go run cmd/server/main.go
+
+  kill-port:
+    desc: "Kill specific port"
+    summary: |
+      Kill specific port.
+
+      EXAMPLE:
+        task kill-port -- 7171
+    cmds:
+      - lsof -ti:{{.CLI_ARGS}} | xargs kill -9
+
   bench:
     desc: "Run all benchmarks"
     cmds:

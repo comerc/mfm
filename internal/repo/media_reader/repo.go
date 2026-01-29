@@ -27,6 +27,11 @@ type Repo struct {
 
 // New creates a new instance of MediaReader repository
 func New() *Repo {
+	// Check if ffmpeg is installed
+	if _, err := exec.LookPath("ffmpeg"); err != nil {
+		panic("ffmpeg not found")
+	}
+
 	return &Repo{
 		log: slog.With("module", "mediareader"),
 	}

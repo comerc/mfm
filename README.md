@@ -37,3 +37,11 @@ go install github.com/vektra/mockery/v2@v2.53.3
 go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 ```
 
+### Environment Variables
+
+Copy the `.env.example` file to `.env` and configure the environment variables:
+
+```bash
+cp .env.example .env
+```
+
