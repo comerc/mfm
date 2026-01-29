@@ -27,9 +27,7 @@ func main() {
 	godotenv.Load()
 
 	// Инициализация ONNX Runtime
-	if err := onnxinit.Initialize(); err != nil {
-		panic(err.Error())
-	}
+	onnxinit.Initialize()
 
 	// Инициализация глобального логгера
 	zapLogger, err := zap.NewProduction()

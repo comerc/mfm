@@ -7,23 +7,19 @@ import (
 )
 
 var (
-	once        sync.Once
-	initialized bool
-	err         error
+	once sync.Once
 )
 
 // Initialize инициализирует ONNX Runtime для всего приложения
-func Initialize() error {
+func Initialize() {
 	once.Do(func() {
 		// Устанавливаем путь к shared library
 		onnxruntime_go.SetSharedLibraryPath("/usr/local/lib/libonnxruntime.dylib")
 
 		// Инициализируем ONNX Runtime
-		err = onnxruntime_go.InitializeEnvironment()
-		if err == nil {
-			initialized = true
+		err := onnxruntime_go.InitializeEnvironment()
+		if err != nil {
+			panic(err.Error())
 		}
 	})
-
-	return err
 }
