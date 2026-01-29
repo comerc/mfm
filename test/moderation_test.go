@@ -30,7 +30,9 @@ func TestMain(m *testing.M) {
 	_ = os.Chdir("..")
 
 	// Инициализируем ONNX Runtime
-	onnxinit.Initialize()
+	if err := onnxinit.Initialize(); err != nil {
+		panic(err.Error())
+	}
 
 	os.Exit(m.Run())
 }

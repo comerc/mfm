@@ -26,10 +26,15 @@ func main() {
 	godotenv.Load()
 
 	// Инициализация ONNX Runtime
-	onnxinit.Initialize()
+	if err := onnxinit.Initialize(); err != nil {
+		panic(err.Error())
+	}
 
 	// Инициализация глобального логгера
-	zapLogger, _ := zap.NewProduction()
+	zapLogger, err := zap.NewProduction()
+	if err != nil {
+		panic(err.Error())
+	}
 	handler := slogzap.Option{Logger: zapLogger}.NewZapHandler()
 	slog.SetDefault(slog.New(handler))
 
