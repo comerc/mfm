@@ -20,6 +20,10 @@ import (
 	onnxinit "github.com/comerc/nsfw-mod/pkg/onnxinit"
 )
 
+type modelRunner interface {
+	Infer(data [][]byte) ([]float32, error)
+}
+
 func TestMain(m *testing.M) {
 	// Поднимаемся на уровень выше (из /test в корень)
 	_ = os.Chdir("..")
@@ -71,15 +75,15 @@ func TestModerate_Success(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		newRunner func() moderation.ModelRunner
+		newRunner func() modelRunner
 	}{
 		{
 			name:      "OpenRunner",
-			newRunner: func() moderation.ModelRunner { return openrunner.New() },
+			newRunner: func() modelRunner { return openrunner.New() },
 		},
 		{
 			name:      "ViTRunner",
-			newRunner: func() moderation.ModelRunner { return vitrunner.New() },
+			newRunner: func() modelRunner { return vitrunner.New() },
 		},
 	}
 
@@ -111,15 +115,15 @@ func TestModerate_Success(t *testing.T) {
 func TestModerate_Integration(t *testing.T) {
 	tests := []struct {
 		name      string
-		newRunner func() moderation.ModelRunner
+		newRunner func() modelRunner
 	}{
 		{
 			name:      "OpenRunner",
-			newRunner: func() moderation.ModelRunner { return openrunner.New() },
+			newRunner: func() modelRunner { return openrunner.New() },
 		},
 		{
 			name:      "ViTRunner",
-			newRunner: func() moderation.ModelRunner { return vitrunner.New() },
+			newRunner: func() modelRunner { return vitrunner.New() },
 		},
 	}
 
@@ -176,15 +180,15 @@ func TestModerate_Integration(t *testing.T) {
 func BenchmarkModerate_BatchProcessing120(b *testing.B) {
 	tests := []struct {
 		name      string
-		newRunner func() moderation.ModelRunner
+		newRunner func() modelRunner
 	}{
 		{
 			name:      "OpenRunner",
-			newRunner: func() moderation.ModelRunner { return openrunner.New() },
+			newRunner: func() modelRunner { return openrunner.New() },
 		},
 		{
 			name:      "ViTRunner",
-			newRunner: func() moderation.ModelRunner { return vitrunner.New() },
+			newRunner: func() modelRunner { return vitrunner.New() },
 		},
 	}
 

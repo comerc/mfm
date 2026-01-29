@@ -4,25 +4,25 @@ import (
 	"log/slog"
 )
 
-//go:generate mockery --name=MediaReader
-type MediaReader interface {
+//go:generate mockery --name=mediaReader --exported
+type mediaReader interface {
 	Read(filePath string) ([][]byte, error)
 }
 
-//go:generate mockery --name=ModelRunner
-type ModelRunner interface {
+//go:generate mockery --name=modelRunner --exported
+type modelRunner interface {
 	Infer(data [][]byte) ([]float32, error)
 }
 
 // Service implements Service
 type Service struct {
 	log         *slog.Logger
-	mediaReader MediaReader
-	modelRunner ModelRunner
+	mediaReader mediaReader
+	modelRunner modelRunner
 }
 
 // New creates a new instance of ModerationService
-func New(mediaReader MediaReader, modelRunner ModelRunner) *Service {
+func New(mediaReader mediaReader, modelRunner modelRunner) *Service {
 	return &Service{
 		log:         slog.With("module", "moderation"),
 		mediaReader: mediaReader,
