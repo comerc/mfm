@@ -37,27 +37,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestModerate_FileNotFound(t *testing.T) {
-	// Arrange
-	tempDir := t.TempDir()
-
-	mediaReader := mediareader.New()
-	modelRunner := openrunner.New()
-	t.Cleanup(func() {
-		modelRunner.Close()
-	})
-	service := moderation.New(mediaReader, modelRunner)
-
-	nonExistentFile := filepath.Join(tempDir, "nonexistent.png")
-
-	// Act
-	_, err := service.Moderate([]string{nonExistentFile})
-
-	// Assert
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "file not found:")
-}
-
 func TestModerate_Success(t *testing.T) {
 	// Arrange
 	tempDir := t.TempDir()
@@ -122,74 +101,80 @@ func TestModerate_Success(t *testing.T) {
 }
 
 func TestModerate_Integration(t *testing.T) {
-	tests := []struct {
-		name      string
-		newRunner func() modelRunner
-	}{
-		{
-			name:      "OpenRunner",
-			newRunner: func() modelRunner { return openrunner.New() },
-		},
-		{
-			name:      "ViTRunner",
-			newRunner: func() modelRunner { return vitrunner.New() },
-		},
+	// Arrange
+	mediaReader := mediareader.New()
+	openRunner := openrunner.New()
+	defer t.Cleanup(func() {
+		openRunner.Close()
+	})
+	vitRunner := vitrunner.New()
+	defer t.Cleanup(func() {
+		vitRunner.Close()
+	})
+	service := moderation.New(mediaReader, openRunner, vitRunner)
+
+	// Собираем все файлы из assets (картинки и видео)
+	assetsDir := "assets"
+	entries, err := os.ReadDir(assetsDir)
+	require.NoError(t, err, "should read assets directory successfully")
+
+	var filePaths []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		ext := strings.ToLower(filepath.Ext(entry.Name()))
+		if ext == ".png" || ext == ".mp4" {
+			filePaths = append(filePaths, filepath.Join(assetsDir, entry.Name()))
+		}
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			// Arrange
-			mediaReader := mediareader.New()
-			modelRunner := tt.newRunner()
-			t.Cleanup(func() {
-				modelRunner.Close()
-			})
-			service := moderation.New(mediaReader, modelRunner)
+	if len(filePaths) == 0 {
+		t.Skip("No image or video files found in assets directory")
+	}
 
-			// Собираем все файлы из assets (картинки и видео)
-			assetsDir := "assets"
-			entries, err := os.ReadDir(assetsDir)
-			require.NoError(t, err, "should read assets directory successfully")
+	// Act
+	scores, err := service.Moderate(filePaths)
 
-			var filePaths []string
-			for _, entry := range entries {
-				if entry.IsDir() {
-					continue
-				}
-				ext := strings.ToLower(filepath.Ext(entry.Name()))
-				if ext == ".png" || ext == ".mp4" {
-					filePaths = append(filePaths, filepath.Join(assetsDir, entry.Name()))
-				}
-			}
+	// Assert
+	assert.NoError(t, err, "moderate should not return error for valid files")
+	assert.NotEmpty(t, scores, "Batch processing should return scores")
+	assert.Len(t, scores, len(filePaths), "should return same number of scores as input files")
 
-			if len(filePaths) == 0 {
-				t.Skip("No image or video files found in assets directory")
-			}
-
-			// Act
-			scores, err := service.Moderate(filePaths)
-
-			// Assert
-			assert.NoError(t, err, "moderate should not return error for valid files")
-			assert.NotEmpty(t, scores, "Batch processing should return scores")
-			assert.Len(t, scores, len(filePaths), "should return same number of scores as input files")
-
-			// Логируем результаты для каждого файла
-			for i, filePath := range filePaths {
-				isNSFW := scores[i] > 0.5
-				ext := strings.ToLower(filepath.Ext(filePath))
-				fileType := "image"
-				if ext == ".mp4" {
-					fileType = "video"
-				}
-				t.Logf("%s: %s, IsNSFW: %v, Score: %.4f", fileType, filepath.Base(filePath), isNSFW, scores[i])
-			}
-		})
+	// Логируем результаты для каждого файла
+	for i, filePath := range filePaths {
+		isNSFW := scores[i] > 0.5
+		ext := strings.ToLower(filepath.Ext(filePath))
+		fileType := "image"
+		if ext == ".mp4" {
+			fileType = "video"
+		}
+		t.Logf("%s: %s, IsNSFW: %v, Score: %.4f", fileType, filepath.Base(filePath), isNSFW, scores[i])
 	}
 }
 
-func BenchmarkModerate_BatchProcessing120(b *testing.B) {
+func TestModerate_FileNotFound(t *testing.T) {
+	// Arrange
+	tempDir := t.TempDir()
+
+	mediaReader := mediareader.New()
+	modelRunner := openrunner.New()
+	t.Cleanup(func() {
+		modelRunner.Close()
+	})
+	service := moderation.New(mediaReader, modelRunner)
+
+	nonExistentFile := filepath.Join(tempDir, "nonexistent.png")
+
+	// Act
+	_, err := service.Moderate([]string{nonExistentFile})
+
+	// Assert
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "file not found:")
+}
+
+func BenchmarkModerate_BatchProcessing120_ForEachModel(b *testing.B) {
 	tests := []struct {
 		name      string
 		newRunner func() modelRunner
@@ -241,5 +226,46 @@ func BenchmarkModerate_BatchProcessing120(b *testing.B) {
 				}
 			}
 		})
+	}
+}
+
+func BenchmarkModerate_BatchProcessing120_ForAllModels(b *testing.B) {
+	// Arrange
+	mediaReader := mediareader.New()
+	openRunner := openrunner.New()
+	defer b.Cleanup(func() {
+		openRunner.Close()
+	})
+	vitRunner := vitrunner.New()
+	defer b.Cleanup(func() {
+		vitRunner.Close()
+	})
+	service := moderation.New(mediaReader, openRunner, vitRunner)
+
+	// Prepare paths for 120 images by repeating the 7 available images
+	imagePaths := make([]string, 120)
+	for i := 0; i < 120; i++ {
+		imgNum := (i % 7) + 1 // Cycle through images 1-7
+		imagePaths[i] = filepath.Join("assets", fmt.Sprintf("%d.png", imgNum))
+	}
+
+	// Verify all files exist
+	for _, path := range imagePaths {
+		_, err := os.Stat(path)
+		require.NoError(b, err, "Required test image does not exist: %s", path)
+	}
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		// Act
+		scores, err := service.Moderate(imagePaths)
+
+		// Assert
+		if err != nil {
+			b.Error(err)
+		}
+		if len(scores) != len(imagePaths) {
+			b.Fatalf("Expected %d scores, got %d", len(imagePaths), len(scores))
+		}
 	}
 }

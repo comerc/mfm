@@ -16,6 +16,7 @@ import (
 
 	mediareader "github.com/comerc/nsfw-mod/internal/repo/media_reader"
 	openrunner "github.com/comerc/nsfw-mod/internal/repo/open_runner"
+	vitrunner "github.com/comerc/nsfw-mod/internal/repo/vit_runner"
 	"github.com/comerc/nsfw-mod/internal/service/moderation"
 	"github.com/comerc/nsfw-mod/pkg/onnxinit"
 	"github.com/comerc/nsfw-mod/pkg/utils"
@@ -45,11 +46,11 @@ func main() {
 	mediaReader := mediareader.New()
 	openRunner := openrunner.New()
 	defer openRunner.Close()
-	// TODO: подключить vitRunner := vitrunner.New()
-	// defer vitRunner.Close()
+	vitRunner := vitrunner.New()
+	defer vitRunner.Close()
 
-	// Создаем сервис модерации (используем OpenRunner по умолчанию)
-	moderationService := moderation.New(mediaReader, openRunner)
+	// Создаем сервис модерации с набором раннеров
+	moderationService := moderation.New(mediaReader, openRunner, vitRunner)
 
 	log.Info("All dependencies are initialized")
 

@@ -16,17 +16,17 @@ type modelRunner interface {
 
 // Service implements Service
 type Service struct {
-	log         *slog.Logger
-	mediaReader mediaReader
-	modelRunner modelRunner
+	log          *slog.Logger
+	mediaReader  mediaReader
+	modelRunners []modelRunner
 }
 
 // New creates a new instance of ModerationService
-func New(mediaReader mediaReader, modelRunner modelRunner) *Service {
+func New(mediaReader mediaReader, modelRunners ...modelRunner) *Service {
 	return &Service{
-		log:         slog.With("module", "moderation"),
-		mediaReader: mediaReader,
-		modelRunner: modelRunner,
+		log:          slog.With("module", "moderation"),
+		mediaReader:  mediaReader,
+		modelRunners: modelRunners,
 	}
 }
 
@@ -57,41 +57,52 @@ func (s *Service) Moderate(filePaths []string) ([]float32, error) {
 	// Выполняем инференс для всех фреймов
 	s.log.Info("Starting inference", "total_frame_count", len(data))
 
-	allScores, err := s.modelRunner.Infer(data)
-	if err != nil {
-		s.log.Error("Inference failed", "error", err.Error())
-		return nil, err
-	}
+	results := make([]float32, len(filePaths))
 
-	s.log.Info("Inference completed", "score_count", len(allScores))
+	for i, runner := range s.modelRunners {
+		allScores, err := runner.Infer(data)
+		if err != nil {
+			s.log.Error("Inference failed", "error", err.Error())
+			return nil, err
+		}
 
-	// Объединяем результаты для фреймов одного видео
-	var results []float32
-	frameIndex := 0
+		s.log.Info("Inference completed", "model_index", i, "score_count", len(allScores))
 
-	for i, count := range frameCounts {
-		if count == 1 {
-			// Это изображение - просто добавляем один результат
-			// Check bounds before accessing allScores
-			if frameIndex >= len(allScores) {
-				s.log.Error("Index out of bounds when processing image", "file_path", filePaths[i], "frame_index", frameIndex, "all_scores_len", len(allScores))
-				continue
+		// Объединяем результаты для фреймов одного видео
+		var modelResults []float32
+		frameIndex := 0
+
+		for i, count := range frameCounts {
+			if count == 1 {
+				// Это изображение - просто добавляем один результат
+				// Check bounds before accessing allScores
+				if frameIndex >= len(allScores) {
+					s.log.Error("Index out of bounds when processing image", "file_path", filePaths[i], "frame_index", frameIndex, "all_scores_len", len(allScores))
+					continue
+				}
+				modelResults = append(modelResults, allScores[frameIndex])
+				s.log.Debug("Image processed", "file_path", filePaths[i], "score", float64(allScores[frameIndex]))
+				frameIndex++
+			} else {
+				// Это видео - берем максимальный результат среди всех фреймов
+				// Check bounds before slicing allScores
+				if frameIndex+count > len(allScores) {
+					s.log.Error("Index out of bounds when processing video", "file_path", filePaths[i], "frame_index", frameIndex, "count", count, "all_scores_len", len(allScores))
+					continue
+				}
+				videoScores := allScores[frameIndex : frameIndex+count]
+				maxScore := getMaxScore(videoScores)
+				modelResults = append(modelResults, maxScore)
+				s.log.Debug("Video processed", "file_path", filePaths[i], "max_score", float64(maxScore), "frame_count", count)
+				frameIndex += count
 			}
-			results = append(results, allScores[frameIndex])
-			s.log.Debug("Image processed", "file_path", filePaths[i], "score", float64(allScores[frameIndex]))
-			frameIndex++
-		} else {
-			// Это видео - берем максимальный результат среди всех фреймов
-			// Check bounds before slicing allScores
-			if frameIndex+count > len(allScores) {
-				s.log.Error("Index out of bounds when processing video", "file_path", filePaths[i], "frame_index", frameIndex, "count", count, "all_scores_len", len(allScores))
-				continue
+		}
+
+		// Объединяем результаты всех моделей
+		for i, score := range modelResults {
+			if score > results[i] {
+				results[i] = score
 			}
-			videoScores := allScores[frameIndex : frameIndex+count]
-			maxScore := s.getMaxScore(videoScores)
-			results = append(results, maxScore)
-			s.log.Debug("Video processed", "file_path", filePaths[i], "max_score", float64(maxScore), "frame_count", count)
-			frameIndex += count
 		}
 	}
 
@@ -99,7 +110,7 @@ func (s *Service) Moderate(filePaths []string) ([]float32, error) {
 	return results, nil
 }
 
-func (s *Service) getMaxScore(scores []float32) float32 {
+func getMaxScore(scores []float32) float32 {
 	var maxScore float32
 	for _, score := range scores {
 		if score > maxScore {

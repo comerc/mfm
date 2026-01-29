@@ -52,7 +52,7 @@ func (r *Repo) Close() {
 
 // Infer запускает inference на данных (пакет кадров)
 func (r *Repo) Infer(frames [][]byte) ([]float32, error) {
-	r.log.Info("Starting ViT inference", "frame_count", len(frames))
+	r.log.Info("Starting inference", "frame_count", len(frames))
 
 	if len(frames) == 0 || r.session == nil {
 		r.log.Warn("Skipping inference", "empty_frames", len(frames) == 0, "session_nil", r.session == nil)
@@ -149,6 +149,6 @@ func (r *Repo) Infer(frames [][]byte) ([]float32, error) {
 		scores[i] = nsfwProb
 	}
 
-	r.log.Info("ViT inference completed", "frame_count", batchSize)
+	r.log.Info("Inference completed", "frame_count", batchSize)
 	return scores, nil
 }

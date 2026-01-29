@@ -1,7 +1,6 @@
 package moderation
 
 import (
-	"log/slog"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -260,14 +259,7 @@ func Test_getMaxScore(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			// Создаем сервис через конструктор с пустыми моками
-			service := &Service{
-				log:         slog.Default(),
-				mediaReader: nil,
-				modelRunner: nil,
-			}
-
-			result := service.getMaxScore(tt.scores)
+			result := getMaxScore(tt.scores)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
