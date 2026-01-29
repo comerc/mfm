@@ -26,7 +26,7 @@ Models should accept input shape `[batch_size, 224, 224, 3]` (float32, normalize
 
 If environment variables are not set, the service will panic with an error message.
 
-См. подробности по установке моделей: doc/models/<model>.md
+See details on model conversion: doc/models/<model>.md
 
 ### ffmpeg
 
