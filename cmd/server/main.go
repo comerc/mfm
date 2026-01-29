@@ -14,6 +14,9 @@ import (
 	slogzap "github.com/samber/slog-zap/v2"
 	"go.uber.org/zap"
 
+	mediareader "github.com/comerc/nsfw-mod/internal/repo/media_reader"
+	openrunner "github.com/comerc/nsfw-mod/internal/repo/open_runner"
+	"github.com/comerc/nsfw-mod/internal/service/moderation"
 	"github.com/comerc/nsfw-mod/pkg/onnxinit"
 	"github.com/comerc/nsfw-mod/pkg/utils"
 )
@@ -33,7 +36,33 @@ func main() {
 	// Создаем логгер с контекстом модуля
 	log := slog.With("module", "main")
 
+	// Инициализация репозиториев
+	mediaReader := mediareader.New()
+	openRunner := openrunner.New()
+	// TODO: подключить vitRunner := vitrunner.New()
+
+	// Создаем сервис модерации (используем OpenRunner по умолчанию)
+	moderationService := moderation.New(mediaReader, openRunner)
+
+	log.Info("All dependencies are initialized")
+
 	http.HandleFunc("/live", liveHandler)
+
+	// Добавляем эндпоинт для модерации
+	http.HandleFunc("/moderate", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// TODO: moderationService.Moderate()
+		_ = moderationService
+
+		// Простой ответ, чтобы показать, что сервис готов к работе
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status": "moderation service ready"}`))
+	})
 
 	// Получаем порт из переменной окружения или используем 8081 по умолчанию
 	port := os.Getenv("HTTP_PORT")

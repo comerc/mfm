@@ -25,12 +25,7 @@ func New() *Repo {
 
 	// Проверяем существование модели
 	if _, err := os.Stat(modelPath); os.IsNotExist(err) {
-		// Модель не найдена, используем mock
-		log.Warn("Model not found, using mock", "model_path", modelPath)
-		return &Repo{
-			log:     log,
-			session: nil,
-		}
+		panic(fmt.Sprintf("Model file not found: %s", modelPath))
 	}
 
 	// Загружаем модель
