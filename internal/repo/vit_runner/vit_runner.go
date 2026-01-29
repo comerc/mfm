@@ -43,6 +43,13 @@ func New() *Repo {
 	}
 }
 
+// Close закрывает сессию с моделью
+func (r *Repo) Close() {
+	if r.session != nil {
+		r.session.Destroy()
+	}
+}
+
 // Infer запускает inference на данных (пакет кадров)
 func (r *Repo) Infer(frames [][]byte) ([]float32, error) {
 	r.log.Info("Starting ViT inference", "frame_count", len(frames))

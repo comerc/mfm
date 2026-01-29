@@ -39,7 +39,9 @@ func main() {
 	// Инициализация репозиториев
 	mediaReader := mediareader.New()
 	openRunner := openrunner.New()
+	defer openRunner.Close()
 	// TODO: подключить vitRunner := vitrunner.New()
+	// defer vitRunner.Close()
 
 	// Создаем сервис модерации (используем OpenRunner по умолчанию)
 	moderationService := moderation.New(mediaReader, openRunner)

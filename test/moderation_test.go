@@ -21,6 +21,7 @@ import (
 )
 
 type modelRunner interface {
+	Close()
 	Infer(data [][]byte) ([]float32, error)
 }
 
@@ -40,6 +41,9 @@ func TestModerate_FileNotFound(t *testing.T) {
 
 	mediaReader := mediareader.New()
 	modelRunner := openrunner.New()
+	t.Cleanup(func() {
+		modelRunner.Close()
+	})
 	service := moderation.New(mediaReader, modelRunner)
 
 	nonExistentFile := filepath.Join(tempDir, "nonexistent.png")
@@ -93,6 +97,9 @@ func TestModerate_Success(t *testing.T) {
 			// Arrange
 			mediaReader := mediareader.New()
 			modelRunner := tt.newRunner()
+			t.Cleanup(func() {
+				modelRunner.Close()
+			})
 			service := moderation.New(mediaReader, modelRunner)
 
 			// Act
@@ -133,6 +140,9 @@ func TestModerate_Integration(t *testing.T) {
 			// Arrange
 			mediaReader := mediareader.New()
 			modelRunner := tt.newRunner()
+			t.Cleanup(func() {
+				modelRunner.Close()
+			})
 			service := moderation.New(mediaReader, modelRunner)
 
 			// Собираем все файлы из assets (картинки и видео)
@@ -197,6 +207,9 @@ func BenchmarkModerate_BatchProcessing120(b *testing.B) {
 			// Arrange
 			mediaReader := mediareader.New()
 			modelRunner := tt.newRunner()
+			b.Cleanup(func() {
+				modelRunner.Close()
+			})
 			service := moderation.New(mediaReader, modelRunner)
 
 			// Prepare paths for 120 images by repeating the 7 available images
