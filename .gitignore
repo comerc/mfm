@@ -36,3 +36,5 @@ nsfw-mod
 tmp
 
 assets/*.onnx
+
+.DS_Store
