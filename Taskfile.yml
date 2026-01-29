@@ -53,10 +53,19 @@ tasks:
 
   test:
     desc: "Run all tests"
+    summary: |
+      Run all tests.
     cmds:
-      - go test ./test/...
+      - GOEXPERIMENT=synctest go test -failfast -count=1 $(go list ./... | grep -v mocks)
+
+  test-short:
+    desc: "Run short tests"
+    summary: |
+      Run short tests.
+    cmds:
+      - GOEXPERIMENT=synctest go test -short -failfast -race -count=1 $(go list ./... | grep -v mocks)
 
   test-verbose:
     desc: "Run all tests with verbose output"
     cmds:
-      - go test -v ./test/...
+      - GOEXPERIMENT=synctest go test -v -failfast -count=1 $(go list ./... | grep -v mocks)

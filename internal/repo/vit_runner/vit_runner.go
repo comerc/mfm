@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"path/filepath"
 
 	"github.com/yalue/onnxruntime_go"
 )
@@ -21,7 +20,13 @@ func New() *Repo {
 	log := slog.With("module", "vitrunner")
 
 	// Путь к модели
-	modelPath := filepath.Join("assets", "vit_nsfw.onnx")
+	// modelPath := filepath.Join("assets", "vit_nsfw.onnx")
+
+	// Путь к модели из переменной окружения
+	modelPath := os.Getenv("MODEL_VIT")
+	if modelPath == "" {
+		panic("MODEL_VIT environment variable is required")
+	}
 
 	// Проверяем существование модели
 	if _, err := os.Stat(modelPath); os.IsNotExist(err) {

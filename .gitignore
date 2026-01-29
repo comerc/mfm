@@ -32,10 +32,8 @@ go.work.sum
 # .vscode/
 
 nsfw-mod
-
+main
 tmp
-
-assets/*.onnx
 
 .DS_Store
 

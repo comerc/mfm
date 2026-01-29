@@ -1,10 +1,25 @@
 package vitrunner
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/comerc/nsfw-mod/pkg/onnxinit"
+	"github.com/comerc/nsfw-mod/pkg/utils"
 )
+
+func TestMain(m *testing.M) {
+	utils.LoadEnvFromRoot()
+
+	// Инициализируем ONNX Runtime
+	if err := onnxinit.Initialize(); err != nil {
+		panic(err.Error())
+	}
+
+	os.Exit(m.Run())
+}
 
 func TestInfer(t *testing.T) {
 	t.Parallel()
@@ -40,7 +55,7 @@ func TestInfer(t *testing.T) {
 				*frames = [][]byte{frame}
 			},
 			wantErr: false,
-			wantLen: 0, // Because session is nil, Infer returns empty slice
+			wantLen: 1,
 		},
 	}
 

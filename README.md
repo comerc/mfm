@@ -17,7 +17,14 @@ brew install onnxruntime
 
 ### Model
 
-Download an ONNX NSFW detection model and place it as `assets/<model>.onnx`. The model should accept input shape `[batch_size, 224, 224, 3]` (float32, normalized 0-1) and output shape `[batch_size, 1]` (float32, probability of NSFW).
+Download ONNX NSFW detection models and configure their paths in `.env` file. The service requires environment variables to be set:
+
+- `MODEL_OPEN` - absolute path to OpenNSFW2 model
+- `MODEL_VIT` - absolute path to ViT model
+
+Models should accept input shape `[batch_size, 224, 224, 3]` (float32, normalized 0-1) and output shape `[batch_size, 1]` (float32, probability of NSFW) for OpenNSFW2 or `[batch_size, 2]` for ViT (probability pair: normal, nsfw).
+
+If environment variables are not set, the service will panic with an error message.
 
 См. подробности по установке моделей: doc/models/<model>.md
 

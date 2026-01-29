@@ -1,12 +1,26 @@
 package moderation
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/comerc/nsfw-mod/internal/service/moderation/mocks"
+	"github.com/comerc/nsfw-mod/pkg/onnxinit"
+	"github.com/comerc/nsfw-mod/pkg/utils"
 )
+
+func TestMain(m *testing.M) {
+	utils.LoadEnvFromRoot()
+
+	// Инициализируем ONNX Runtime
+	if err := onnxinit.Initialize(); err != nil {
+		panic(err.Error())
+	}
+
+	os.Exit(m.Run())
+}
 
 func TestModerate_Success(t *testing.T) {
 	t.Parallel()

@@ -18,6 +18,7 @@ import (
 	vitrunner "github.com/comerc/nsfw-mod/internal/repo/vit_runner"
 	moderation "github.com/comerc/nsfw-mod/internal/service/moderation"
 	onnxinit "github.com/comerc/nsfw-mod/pkg/onnxinit"
+	"github.com/comerc/nsfw-mod/pkg/utils"
 )
 
 type modelRunner interface {
@@ -26,6 +27,8 @@ type modelRunner interface {
 }
 
 func TestMain(m *testing.M) {
+	utils.LoadEnvFromRoot()
+
 	// Поднимаемся на уровень выше (из /test в корень)
 	_ = os.Chdir("..")
 
