@@ -39,4 +39,5 @@ tmp
 # ML model files
 *.onnx
 
+assets/
 
