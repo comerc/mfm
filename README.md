@@ -52,3 +52,6 @@ Copy the `.env.example` file to `.env` and configure the environment variables:
 cp .env.example .env
 ```
 
+## Test content
+
+Create `assets/[1..7].png` and `assets/video[1..2].mp4`
