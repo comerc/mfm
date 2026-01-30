@@ -38,7 +38,61 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestModerate_Success(t *testing.T) {
+func TestModerate_Integration(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	// Arrange
+	mediaReader := mediareader.New()
+	openRunner := openrunner.New()
+	t.Cleanup(func() {
+		openRunner.Close()
+	})
+	vitRunner := vitrunner.New()
+	t.Cleanup(func() {
+		vitRunner.Close()
+	})
+	service := moderation.New(mediaReader, openRunner, vitRunner)
+
+	// Собираем все файлы из assets (картинки и видео)
+	assetsDir := "assets"
+	entries, err := os.ReadDir(assetsDir)
+	require.NoError(t, err, "should read assets directory successfully")
+
+	var filePaths []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		ext := strings.ToLower(filepath.Ext(entry.Name()))
+		if ext == ".png" || ext == ".mp4" {
+			filePaths = append(filePaths, filepath.Join(assetsDir, entry.Name()))
+		}
+	}
+	require.True(t, len(filePaths) != 0, "should have at least one test file")
+
+	// Act
+	scores, err := service.Moderate(filePaths)
+
+	// Assert
+	assert.NoError(t, err, "moderate should not return error for valid files")
+	assert.NotEmpty(t, scores, "Batch processing should return scores")
+	assert.Len(t, scores, len(filePaths), "should return same number of scores as input files")
+
+	// Логируем результаты для каждого файла
+	for i, filePath := range filePaths {
+		isNSFW := scores[i] > 0.5
+		ext := strings.ToLower(filepath.Ext(filePath))
+		fileType := "image"
+		if ext == ".mp4" {
+			fileType = "video"
+		}
+		t.Logf("%s: %s, IsNSFW: %v, Score: %.4f", fileType, filepath.Base(filePath), isNSFW, scores[i])
+	}
+}
+
+func TestModerate_OK(t *testing.T) {
 	// Arrange
 	tempDir := t.TempDir()
 	testFile := filepath.Join(tempDir, "test.png")
@@ -94,63 +148,8 @@ func TestModerate_Success(t *testing.T) {
 			// Simple red image should not be NSFW, so score should be low
 			assert.True(t, score <= 0.5, "expected score <= 0.5 for simple red image, got %f", score)
 
-			if tt.name == "ViTRunner" {
-				t.Logf("ViT Result - IsNSFW: %v, Score: %.4f", score > 0.5, score)
-			}
+			t.Logf("Result - IsNSFW: %v, Score: %.4f", score > 0.5, score)
 		})
-	}
-}
-
-func TestModerate_Integration(t *testing.T) {
-	// Arrange
-	mediaReader := mediareader.New()
-	openRunner := openrunner.New()
-	defer t.Cleanup(func() {
-		openRunner.Close()
-	})
-	vitRunner := vitrunner.New()
-	defer t.Cleanup(func() {
-		vitRunner.Close()
-	})
-	service := moderation.New(mediaReader, openRunner, vitRunner)
-
-	// Собираем все файлы из assets (картинки и видео)
-	assetsDir := "assets"
-	entries, err := os.ReadDir(assetsDir)
-	require.NoError(t, err, "should read assets directory successfully")
-
-	var filePaths []string
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		ext := strings.ToLower(filepath.Ext(entry.Name()))
-		if ext == ".png" || ext == ".mp4" {
-			filePaths = append(filePaths, filepath.Join(assetsDir, entry.Name()))
-		}
-	}
-
-	if len(filePaths) == 0 {
-		t.Skip("No image or video files found in assets directory")
-	}
-
-	// Act
-	scores, err := service.Moderate(filePaths)
-
-	// Assert
-	assert.NoError(t, err, "moderate should not return error for valid files")
-	assert.NotEmpty(t, scores, "Batch processing should return scores")
-	assert.Len(t, scores, len(filePaths), "should return same number of scores as input files")
-
-	// Логируем результаты для каждого файла
-	for i, filePath := range filePaths {
-		isNSFW := scores[i] > 0.5
-		ext := strings.ToLower(filepath.Ext(filePath))
-		fileType := "image"
-		if ext == ".mp4" {
-			fileType = "video"
-		}
-		t.Logf("%s: %s, IsNSFW: %v, Score: %.4f", fileType, filepath.Base(filePath), isNSFW, scores[i])
 	}
 }
 
@@ -234,11 +233,11 @@ func BenchmarkModerate_BatchProcessing120_ForAllModels(b *testing.B) {
 	// Arrange
 	mediaReader := mediareader.New()
 	openRunner := openrunner.New()
-	defer b.Cleanup(func() {
+	b.Cleanup(func() {
 		openRunner.Close()
 	})
 	vitRunner := vitrunner.New()
-	defer b.Cleanup(func() {
+	b.Cleanup(func() {
 		vitRunner.Close()
 	})
 	service := moderation.New(mediaReader, openRunner, vitRunner)
