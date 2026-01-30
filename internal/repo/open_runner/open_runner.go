@@ -19,10 +19,7 @@ type Repo struct {
 func New() *Repo {
 	log := slog.With("module", "openrunner")
 
-	// Путь к модели
-	// modelPath := filepath.Join("assets", "opennsfw2.onnx")
-
-	// TODO: Путь к модели из переменной окружения
+	// Путь к модели из переменной окружения
 	modelPath := os.Getenv("MODEL_OPEN")
 	if modelPath == "" {
 		panic("MODEL_OPEN environment variable is required")
