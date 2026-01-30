@@ -1,5 +1,5 @@
 # nsfw-mod
-Moderation NSFW
+Moderation of NSFW media files
 
 ## Installation
 
@@ -36,7 +36,7 @@ See details on model conversion: doc/models/<model>.md
 brew install ffmpeg
 ```
 
-### Прочие Зависимости
+### Other Dependencies
 
 ```bash
 go install github.com/go-task/task/v3/cmd/task@latest
