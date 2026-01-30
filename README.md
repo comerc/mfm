@@ -51,3 +51,4 @@ Copy the `.env.example` file to `.env` and configure the environment variables:
 ```bash
 cp .env.example .env
 ```
+
