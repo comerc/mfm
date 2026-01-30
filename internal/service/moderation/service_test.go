@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/comerc/nsfw-mod/internal/service/moderation/mocks"
-	"github.com/comerc/nsfw-mod/pkg/onnxinit"
-	"github.com/comerc/nsfw-mod/pkg/utils"
+	"github.com/comerc/mfm/internal/service/moderation/mocks"
+	"github.com/comerc/mfm/pkg/onnxinit"
+	"github.com/comerc/mfm/pkg/utils"
 )
 
 func TestMain(m *testing.M) {

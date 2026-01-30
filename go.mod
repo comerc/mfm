@@ -1,4 +1,4 @@
-module github.com/comerc/nsfw-mod
+module github.com/comerc/mfm
 
 go 1.24.2
 

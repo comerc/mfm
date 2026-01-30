@@ -13,12 +13,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	mediareader "github.com/comerc/nsfw-mod/internal/repo/media_reader"
-	openrunner "github.com/comerc/nsfw-mod/internal/repo/open_runner"
-	vitrunner "github.com/comerc/nsfw-mod/internal/repo/vit_runner"
-	moderation "github.com/comerc/nsfw-mod/internal/service/moderation"
-	onnxinit "github.com/comerc/nsfw-mod/pkg/onnxinit"
-	"github.com/comerc/nsfw-mod/pkg/utils"
+	mediareader "github.com/comerc/mfm/internal/repo/media_reader"
+	openrunner "github.com/comerc/mfm/internal/repo/open_runner"
+	vitrunner "github.com/comerc/mfm/internal/repo/vit_runner"
+	moderation "github.com/comerc/mfm/internal/service/moderation"
+	onnxinit "github.com/comerc/mfm/pkg/onnxinit"
+	"github.com/comerc/mfm/pkg/utils"
 )
 
 type modelRunner interface {

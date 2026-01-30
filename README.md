@@ -1,4 +1,4 @@
-# nsfw-mod
+# mfm
 Moderation of NSFW media files
 
 ## Installation

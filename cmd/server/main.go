@@ -14,12 +14,12 @@ import (
 	slogzap "github.com/samber/slog-zap/v2"
 	"go.uber.org/zap"
 
-	mediareader "github.com/comerc/nsfw-mod/internal/repo/media_reader"
-	openrunner "github.com/comerc/nsfw-mod/internal/repo/open_runner"
-	vitrunner "github.com/comerc/nsfw-mod/internal/repo/vit_runner"
-	"github.com/comerc/nsfw-mod/internal/service/moderation"
-	"github.com/comerc/nsfw-mod/pkg/onnxinit"
-	"github.com/comerc/nsfw-mod/pkg/utils"
+	mediareader "github.com/comerc/mfm/internal/repo/media_reader"
+	openrunner "github.com/comerc/mfm/internal/repo/open_runner"
+	vitrunner "github.com/comerc/mfm/internal/repo/vit_runner"
+	"github.com/comerc/mfm/internal/service/moderation"
+	"github.com/comerc/mfm/pkg/onnxinit"
+	"github.com/comerc/mfm/pkg/utils"
 )
 
 func main() {
