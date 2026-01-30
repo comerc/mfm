@@ -51,17 +51,13 @@ tasks:
 
   test:
     desc: "Run all tests"
-    summary: |
-      Run all tests.
     cmds:
       - GOEXPERIMENT=synctest go test -ldflags "-extldflags -Wl,-w" -failfast -count=1 $(go list ./... | grep -v mocks)
 
   test-short:
-    desc: "Run short tests"
-    summary: |
-      Run short tests.
+    desc: "Run short tests with race detector"
     cmds:
-      - GOEXPERIMENT=synctest go test -ldflags "-extldflags -Wl,-w" -short -failfast -race -count=1 $(go list ./... | grep -v mocks)
+      - GOEXPERIMENT=synctest go test -ldflags "-extldflags -Wl,-w" -short -race -failfast -count=1 $(go list ./... | grep -v mocks)
 
   test-verbose:
     desc: "Run all tests with verbose output"
