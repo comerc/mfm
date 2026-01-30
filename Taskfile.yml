@@ -1,0 +1,65 @@
+version: '3'
+
+tasks:
+  default:
+    # Эта задача выполняется по умолчанию при вызове 'task' без аргументов.
+    # Она скрыта из списка, так как у нее нет 'desc'.
+    cmds:
+      - task --list
+      - echo "task <name> --summary"
+    silent: true
+
+  mod:
+    desc: "Sync go.mod"
+    cmds:
+      - go mod download
+      - go mod tidy
+
+  lint:
+    desc: "Run linters"
+    summary: |
+      Run linters.
+    cmds:
+      - GOEXPERIMENT=synctest golangci-lint run
+
+    silent: true
+
+  run:
+    desc: "Run the server"
+    cmds:
+      - go run cmd/server/main.go
+
+  kill-port:
+    desc: "Kill specific port"
+    summary: |
+      Kill specific port.
+
+      EXAMPLE:
+        task kill-port -- 7171
+    cmds:
+      - lsof -ti:{{.CLI_ARGS}} | xargs kill -9
+
+  bench:
+    desc: "Run all benchmarks"
+    cmds:
+      - go test -bench=. -run=^$ ./test/
+
+  bench-mem:
+    desc: "Run all benchmarks with memory profiling"
+    cmds:
+      - go test -bench=. -run=^$ -benchmem ./test/
+
+  test:
+    desc: "Run all tests"
+    cmds:
+      - GOEXPERIMENT=synctest go test -ldflags "-extldflags -Wl,-w" -failfast -count=1 $(go list ./... | grep -v mocks)
+
+  test-short:
+    desc: "Run short tests with race detector"
+    cmds:
+      - GOEXPERIMENT=synctest go test -ldflags "-extldflags -Wl,-w" -short -race -failfast -count=1 $(go list ./... | grep -v mocks)
+
+  test-verbose:
+    desc: "Run all tests with verbose output"
+    cmds:
+      - GOEXPERIMENT=synctest go test -ldflags "-extldflags -Wl,-w" -v -failfast -count=1 $(go list ./... | grep -v mocks)
