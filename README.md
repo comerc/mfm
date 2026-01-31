@@ -1,5 +1,5 @@
 # mfm
-Moderation of NSFW media files
+Moderation of NSFW media files via AI.
 
 ## Installation
 
