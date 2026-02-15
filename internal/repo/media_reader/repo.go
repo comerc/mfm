@@ -6,10 +6,11 @@ import (
 	"image"
 	"io"
 	"log/slog"
-	"net/http"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/h2non/filetype"
 )
 
 // ContentType represents the type of media content
@@ -20,6 +21,10 @@ const (
 	ContentTypeImage   ContentType = "image"
 	ContentTypeVideo   ContentType = "video"
 )
+
+// Supported file extensions
+const videoExts = "mp4|avi|mov|mkv"
+const imageExts = "jpg|png"
 
 type Repo struct {
 	log *slog.Logger
@@ -150,7 +155,7 @@ func (s *Repo) processImage(data []byte) ([][]byte, error) {
 	}
 
 	// Resize to 224x224
-	resized := s.resize(img, 224, 224)
+	resized := resize(img, 224, 224)
 
 	// Convert to RGB24
 	rgbData := make([]byte, 224*224*3)
@@ -195,25 +200,35 @@ func (s *Repo) Check(filePath string) (ContentType, error) {
 		return ContentTypeUnknown, fmt.Errorf("unable to read file: %w", err)
 	}
 
-	// Detect content type
-	rawContentType := http.DetectContentType(buffer[:n])
+	// Detect content type using filetype
+	kind, err := filetype.Match(buffer[:n])
+	if err != nil {
+		s.log.Error("Unable to detect file type", "file_path", filePath, "error", err.Error())
+		return ContentTypeUnknown, fmt.Errorf("unable to detect file type: %w", err)
+	}
 
-	s.log.Debug("Detected content type", "content_type", rawContentType, "file_path", filePath)
+	s.log.Debug("Detected content type", "mime_type", kind.MIME.Value, "extension", kind.Extension, "file_path", filePath)
+
+	// Check if detected extension is in our supported list
+	if !isExtensionSupported(kind.Extension) {
+		s.log.Warn("Unsupported file type", "extension", kind.Extension, "file_path", filePath)
+		return ContentTypeUnknown, fmt.Errorf("unsupported file type: %s", kind.Extension)
+	}
 
 	// Check if it's an image or video type
-	if strings.HasPrefix(rawContentType, "image/") {
+	if kind.MIME.Type == "image" {
 		return ContentTypeImage, nil
 	}
-	if strings.HasPrefix(rawContentType, "video/") {
+	if kind.MIME.Type == "video" {
 		return ContentTypeVideo, nil
 	}
 
-	s.log.Warn("Unsupported file type", "content_type", rawContentType, "file_path", filePath)
-	return ContentTypeUnknown, fmt.Errorf("unsupported file type: %s", rawContentType)
+	s.log.Warn("Unsupported file type", "mime_type", kind.MIME.Value, "file_path", filePath)
+	return ContentTypeUnknown, fmt.Errorf("unsupported file type: %s", kind.MIME.Value)
 }
 
 // Simple nearest-neighbor resize
-func (s *Repo) resize(img image.Image, width, height int) image.Image {
+func resize(img image.Image, width, height int) image.Image {
 	bounds := img.Bounds()
 	w := bounds.Dx()
 	h := bounds.Dy()
@@ -227,4 +242,15 @@ func (s *Repo) resize(img image.Image, width, height int) image.Image {
 		}
 	}
 	return newImg
+}
+
+// isExtensionSupported checks if the file extension is in the supported list
+func isExtensionSupported(ext string) bool {
+	supportedExts := videoExts + "|" + imageExts
+	for _, supportedExt := range strings.Split(supportedExts, "|") {
+		if ext == supportedExt {
+			return true
+		}
+	}
+	return false
 }
