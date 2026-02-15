@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"image"
+	_ "image/gif"  // animated GIFs → first frame automatically
+	_ "image/jpeg" // baseline + progressive JPEG (single decoder — both variants)
+	_ "image/png"
 	"io"
 	"log/slog"
 	"os"
@@ -12,6 +15,7 @@ import (
 
 	"github.com/h2non/filetype"
 	"golang.org/x/image/draw"
+	_ "golang.org/x/image/webp"
 )
 
 // ContentType represents the type of media content
@@ -24,8 +28,8 @@ const (
 )
 
 // Supported file extensions
-const videoExts = "mp4|avi|mov|mkv"
-const imageExts = "jpg|png"
+const videoExts = "mp4|avi|mov|mkv|webm"
+const imageExts = "jpg|png|gif|bmp|webp"
 
 type Repo struct {
 	log *slog.Logger
@@ -213,7 +217,7 @@ func (s *Repo) Check(filePath string) (ContentType, error) {
 	// Check if detected extension is in our supported list
 	if !isExtensionSupported(kind.Extension) {
 		s.log.Warn("Unsupported file type", "extension", kind.Extension, "file_path", filePath)
-		return ContentTypeUnknown, fmt.Errorf("unsupported file type: %s", kind.Extension)
+		return ContentTypeUnknown, fmt.Errorf("unsupported file type by extension kind: %s", kind.Extension)
 	}
 
 	// Check if it's an image or video type
@@ -225,7 +229,7 @@ func (s *Repo) Check(filePath string) (ContentType, error) {
 	}
 
 	s.log.Warn("Unsupported file type", "mime_type", kind.MIME.Value, "file_path", filePath)
-	return ContentTypeUnknown, fmt.Errorf("unsupported file type: %s", kind.MIME.Value)
+	return ContentTypeUnknown, fmt.Errorf("unsupported file type by MIME value: %s", kind.MIME.Value)
 }
 
 // resize scales the image using nearest neighbor interpolation.
