@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/h2non/filetype"
+	"golang.org/x/image/draw"
 )
 
 // ContentType represents the type of media content
@@ -227,21 +228,18 @@ func (s *Repo) Check(filePath string) (ContentType, error) {
 	return ContentTypeUnknown, fmt.Errorf("unsupported file type: %s", kind.MIME.Value)
 }
 
-// Simple nearest-neighbor resize
+// resize scales the image using nearest neighbor interpolation.
+// Optimal for neural networks (preserves sharp edges).
 func resize(img image.Image, width, height int) image.Image {
-	bounds := img.Bounds()
-	w := bounds.Dx()
-	h := bounds.Dy()
-	newImg := image.NewRGBA(image.Rect(0, 0, width, height))
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			// Calculate nearest source pixel
-			srcX := bounds.Min.X + (x*w)/width
-			srcY := bounds.Min.Y + (y*h)/height
-			newImg.Set(x, y, img.At(srcX, srcY))
-		}
-	}
-	return newImg
+	// Create the destination image.
+	// NRGBA is the best format for most models (RGB + optional Alpha).
+	dst := image.NewNRGBA(image.Rect(0, 0, width, height))
+
+	// Use the built-in Scaler.
+	// This is much faster than a loop with Set/At since it works directly with bytes.
+	draw.NearestNeighbor.Scale(dst, dst.Bounds(), img, img.Bounds(), draw.Src, nil)
+
+	return dst
 }
 
 // isExtensionSupported checks if the file extension is in the supported list
