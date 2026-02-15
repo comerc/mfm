@@ -7,7 +7,6 @@ import (
 	"image/png"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -60,17 +59,31 @@ func TestModerate_Integration(t *testing.T) {
 	entries, err := os.ReadDir(assetsDir)
 	require.NoError(t, err, "should read assets directory successfully")
 
-	var filePaths []string
+	type fileInfo struct {
+		path        string
+		contentType mediareader.ContentType
+	}
+
+	var files []fileInfo
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
-		ext := strings.ToLower(filepath.Ext(entry.Name()))
-		if ext == ".png" || ext == ".mp4" {
-			filePaths = append(filePaths, filepath.Join(assetsDir, entry.Name()))
+		filePath := filepath.Join(assetsDir, entry.Name())
+		contentType, err := mediaReader.Check(filePath)
+		if err != nil {
+			continue
+		}
+		if contentType != mediareader.ContentTypeUnknown {
+			files = append(files, fileInfo{path: filePath, contentType: contentType})
 		}
 	}
-	require.True(t, len(filePaths) != 0, "should have at least one test file")
+	require.True(t, len(files) != 0, "should have at least one test file")
+
+	filePaths := make([]string, len(files))
+	for i, f := range files {
+		filePaths[i] = f.path
+	}
 
 	// Act
 	scores, err := service.Moderate(filePaths)
@@ -81,14 +94,10 @@ func TestModerate_Integration(t *testing.T) {
 	assert.Len(t, scores, len(filePaths), "should return same number of scores as input files")
 
 	// Логируем результаты для каждого файла
-	for i, filePath := range filePaths {
+	for i, f := range files {
 		isNSFW := scores[i] > 0.5
-		ext := strings.ToLower(filepath.Ext(filePath))
-		fileType := "image"
-		if ext == ".mp4" {
-			fileType = "video"
-		}
-		t.Logf("%s: %s, IsNSFW: %v, Score: %.4f", fileType, filepath.Base(filePath), isNSFW, scores[i])
+		fileType := string(f.contentType)
+		t.Logf("%s: %s, IsNSFW: %v, Score: %.4f", fileType, filepath.Base(f.path), isNSFW, scores[i])
 	}
 }
 

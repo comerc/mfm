@@ -16,9 +16,9 @@ import (
 type ContentType string
 
 const (
-	contentTypeUnknown ContentType = "unknown"
-	contentTypeImage   ContentType = "image"
-	contentTypeVideo   ContentType = "video"
+	ContentTypeUnknown ContentType = "unknown"
+	ContentTypeImage   ContentType = "image"
+	ContentTypeVideo   ContentType = "video"
 )
 
 type Repo struct {
@@ -41,7 +41,7 @@ func (s *Repo) Read(filePath string) ([][]byte, error) {
 	s.log.Info("Reading media file", "file_path", filePath)
 
 	// Check file first and get content type
-	contentType, err := s.check(filePath)
+	contentType, err := s.Check(filePath)
 	if err != nil {
 		s.log.Error("Failed to check file", "file_path", filePath, "error", err.Error())
 		return nil, err
@@ -62,9 +62,9 @@ func (s *Repo) Read(filePath string) ([][]byte, error) {
 	}
 
 	switch contentType {
-	case contentTypeImage:
+	case ContentTypeImage:
 		return s.processImage(data)
-	case contentTypeVideo:
+	case ContentTypeVideo:
 		return s.processVideo(filePath)
 	default:
 		s.log.Error("Unsupported content type", "content_type", string(contentType), "file_path", filePath)
@@ -172,18 +172,18 @@ func (s *Repo) processImage(data []byte) ([][]byte, error) {
 }
 
 // Check if file exists and has supported extension/type
-func (s *Repo) check(filePath string) (ContentType, error) {
+func (s *Repo) Check(filePath string) (ContentType, error) {
 	s.log.Debug("Checking file", "file_path", filePath)
 
 	// Check if file exists
 	file, err := os.Open(filePath)
 	if os.IsNotExist(err) {
 		s.log.Warn("File not found", "file_path", filePath)
-		return contentTypeUnknown, fmt.Errorf("file not found: %s", filePath)
+		return ContentTypeUnknown, fmt.Errorf("file not found: %s", filePath)
 	}
 	if err != nil {
 		s.log.Error("Unable to open file", "file_path", filePath, "error", err.Error())
-		return contentTypeUnknown, fmt.Errorf("unable to open file: %w", err)
+		return ContentTypeUnknown, fmt.Errorf("unable to open file: %w", err)
 	}
 	defer file.Close()
 
@@ -192,7 +192,7 @@ func (s *Repo) check(filePath string) (ContentType, error) {
 	n, err := file.Read(buffer)
 	if err != nil && n == 0 {
 		s.log.Error("Unable to read file", "file_path", filePath, "error", err.Error())
-		return contentTypeUnknown, fmt.Errorf("unable to read file: %w", err)
+		return ContentTypeUnknown, fmt.Errorf("unable to read file: %w", err)
 	}
 
 	// Detect content type
@@ -202,14 +202,14 @@ func (s *Repo) check(filePath string) (ContentType, error) {
 
 	// Check if it's an image or video type
 	if strings.HasPrefix(rawContentType, "image/") {
-		return contentTypeImage, nil
+		return ContentTypeImage, nil
 	}
 	if strings.HasPrefix(rawContentType, "video/") {
-		return contentTypeVideo, nil
+		return ContentTypeVideo, nil
 	}
 
 	s.log.Warn("Unsupported file type", "content_type", rawContentType, "file_path", filePath)
-	return contentTypeUnknown, fmt.Errorf("unsupported file type: %s", rawContentType)
+	return ContentTypeUnknown, fmt.Errorf("unsupported file type: %s", rawContentType)
 }
 
 // Simple nearest-neighbor resize
