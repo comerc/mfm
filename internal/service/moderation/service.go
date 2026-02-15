@@ -104,6 +104,8 @@ func (s *Service) Moderate(filePaths []string) ([]float32, error) {
 				results[i] = score
 			}
 		}
+
+		// TODO: если отработавшая модель уже определила score выше порога, то можно не продолжать
 	}
 
 	s.log.Info("Moderation completed", "result_count", len(results))
